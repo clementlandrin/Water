@@ -1,0 +1,103 @@
+// main: hide.less
+
+.cdb .cdb-sheet th.start {
+	width: 15px;
+}
+
+.tile {
+	zoom: 0.6;
+	image-rendering: -webkit-optimize-contrast !important;
+}
+.hide-tileselect {
+	.tile {
+		zoom: 1.0;
+	}
+}
+
+
+.cdb-sheet {
+	.n_id, .t_ref {
+		color: #b38caa;
+	}
+	.t_enum {
+		color: #53ccae;
+	}
+	.t_flags {
+		color: #798cc0;
+	}
+	.n_desc {
+		color: #81a5ad;
+	}
+	// naming: .s_[sheetname], .n_[columnname]
+	&.s_element {
+		.n_npc, .n_items, .n_props, .n_notes {
+			width: 10%;
+		}
+	}
+
+	&.s_skill {
+		.tile {
+			zoom: 1;
+		}
+	}
+
+	&.s_mission {
+		.n_id { width: 100px; }
+		.n_title { width: 125px; }
+		.n_description, .n_mapDescription { width: 150px; }
+		.t_int {
+			width: 60px !important;
+		}
+		.n_amount, .n_maxOcc, .n_weight, .n_nbDone, .n_setting {
+			width: 40px !important;
+		}
+	}
+	&.s_trait {
+		.n_id { width: 150px; }
+		.n_name { width: 200px; }
+		.n_actionName { width: 150px; }
+	}
+
+	&.s_item {
+		.n_type { width: 80px; }
+		.n_rarity { width: 55px; text-align: center; }
+		.n_tool { width: 100px; }
+		.n_baseBonus { width: 100px; }
+	}
+
+	&.s_craft {
+		.n_tool { width: 150px; }
+		.n_recipe { text-overflow: unset; }
+	}
+
+	&.s_unitClass {
+		.n_notes { width: 60px; }
+	}
+
+	&.s_unitPattern, &.s_bonus, &.s_attribute {
+		.n_id { width: 250px; }
+	}
+
+	&.s_constant {
+		.n_value { width: 60px; }
+	}
+
+	&.s_levelProps {
+		.n_kind { width: 200px; }
+	}
+
+	&.s_sound {
+		.n_gameObject { width: 175px; }
+		.n_status { width: 150px; }
+	}
+
+	.t_float, .t_bool, .t_int {
+		width: 32px !important;
+	}
+}
+
+.detached {
+	.n_vars {
+		width: 700;
+	}
+}

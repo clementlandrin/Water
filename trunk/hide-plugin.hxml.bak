@@ -1,0 +1,18 @@
+-cp src
+-cp src/lib
+-cp src/tools
+-cp tools
+-lib hide
+-lib hxnodejs
+-lib castle
+--macro hide.Plugin.init()
+-D script
+-js tools/hide-plugin.js
+-debug
+-dce no
+
+--macro include("prefab")
+--macro include("shaders")
+lib.OpenWorldMaterial
+lib.ScriptConfiguration
+gfx.IndirectBlend

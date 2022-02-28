@@ -1,0 +1,54 @@
+{
+	"plugins": [
+		"../tools/hide-plugin.js"
+	],
+	"fs.config" : "default",
+	"fs.convert" : {
+		"wav" : "ogg",
+		"kra" : "none",
+		"prefab" : "hbson",
+		"l3d" : "hbson",
+		"hdr" : "none",
+		"^assets/interior/.*\\.png$" : { "convert" : "dds", "format" : "BC1", "alpha" : 128, "mips" : true },
+		"^assets/outdoor/.*\\.png$" : { "convert" : "dds", "format" : "BC1", "alpha" : 128, "mips" : true },
+		"^assets/terrain/.*\\.png$" : { "convert" : "dds", "format" : "BC1", "alpha" : 128, "mips" : true },
+		"^assets/worldmap/buildings/.*\\.png$" : { "convert" : "dds", "format" : "BC1", "alpha" : 128, "mips" : true },
+		"^assets/worldmap/props/.*\\.png$" : { "convert" : "dds", "format" : "BC3", "mips" : true },
+		"^assets/worldmap/textures/decal/.*\\.png$" : { "convert" : "dds", "format" : "BC3", "mips" : true },
+		"^assets/worldmap/textures/terrain_worldmap/.*\\.png$" : { "convert" : "dds", "format" : "BC1" },
+		"^assets/worldmap/textures/terrain_worldmap/.*_Normal\\.png$" : { "convert" : "dds", "format" : "BC3", "priority" : 2 },
+		"^prefabs/battle/obstacle/.*\\.png$" : { "convert" : "dds", "format" : "BC1", "alpha" : 128, "mips" : true },
+		"^.*Metallic.*\\.png$" : { "convert" : "dds", "format" : "BC1", "priority" : 1, "mips" : true },
+		"^.*Alpha.*\\.png$" : { "convert" : "dds", "format" : "BC3", "priority" : 2, "mips" : true },
+		"^chars/.*\\.png$" : { "convert" : "dds", "format" : "BC1", "alpha" : 128, "mips" : true },
+		"^chars/unit.*\\.png$" : { "convert" : "none", "priority" : 3 },
+		"^chars/.*/Model.*\\.fbx$" : { "convert" : "hmd", "normals" : true },
+		"^chars/.*/Anim_Pose.*\\.fbx$" : { "convert" : "hmd", "precise" : true, "priority" : 3 },
+		"^chars/.*/Anim_Death.*\\.fbx$" : { "convert" : "hmd", "precise" : true, "priority" : 3 },
+		"^chars/.*/Anim_IdlePortrait.*\\.fbx$" : { "convert" : "hmd", "precise" : true, "priority" : 3 },
+		"^chars/.*Metallic.*\\.png$" : { "convert" : "dds", "format" : "BC3", "priority" : 2, "mips" : true },
+		"^assets/outdoor/textures_terrain/.*Metallic.*\\.png$" : { "convert" : "dds", "format" : "BC3", "priority" : 2, "mips" : true }
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

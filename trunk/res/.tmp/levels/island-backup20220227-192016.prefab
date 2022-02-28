@@ -1,0 +1,102 @@
+{
+	"type": "prefab",
+	"children": [
+		{
+			"type": "renderProps",
+			"name": "mainRenderer",
+			"props": {
+				"PBR": {
+					"mode": "Pbr",
+					"emissive": 1,
+					"exposure": 0,
+					"sky": "Background",
+					"tone": "Linear",
+					"occlusion": 1
+				}
+			},
+			"children": [
+				{
+					"type": "environment",
+					"name": "environment",
+					"sourceMapPath": "assets/worldmap/textures/envmap.jpg"
+				}
+			]
+		},
+		{
+			"type": "light",
+			"name": "light_0",
+			"z": 57.07,
+			"rotationY": 26.7,
+			"rotationZ": -55.4,
+			"kind": "Directional",
+			"color": 15524782,
+			"power": 1.52,
+			"range": 10,
+			"zNear": 0.02,
+			"shadows": {
+				"mode": "Mixed",
+				"size": 2048,
+				"radius": 0,
+				"quality": 1,
+				"bias": 0.1,
+				"samplingMode": {
+					"kind": "None"
+				}
+			}
+		},
+		{
+			"type": "terrain",
+			"name": "terrain",
+			"brushOpacity": 0.45,
+			"surfaceCount": 2,
+			"surfaceSize": 512,
+			"surfaces": [
+				{
+					"albedo": "assets/terrain/wet_sand_beach/wet_sand_beach_Albedo.png",
+					"normal": "assets/terrain/wet_sand_beach/wet_sand_beach_Normal.png",
+					"pbr": "assets/terrain/wet_sand_beach/wet_sand_beach_MetallicGlossAO.png",
+					"tilling": 0.15,
+					"angle": 0,
+					"offsetX": 0,
+					"offsetY": 0,
+					"minHeight": 0,
+					"maxHeight": 1
+				},
+				{
+					"albedo": "assets/terrain/battle_plain_grass/battle_plain_grass_Albedo.png",
+					"normal": "assets/terrain/battle_plain_grass/battle_plain_grass_Normal.png",
+					"pbr": "assets/terrain/battle_plain_grass/battle_plain_grass_MetallicGlossAO.png",
+					"tilling": 0.08,
+					"angle": 0,
+					"offsetX": 0,
+					"offsetY": 0,
+					"minHeight": 0,
+					"maxHeight": 1
+				}
+			]
+		},
+		{
+			"type": "water",
+			"name": "water",
+			"scaleX": 0.5,
+			"scaleY": 0.5,
+			"autoCreateTile": true,
+			"color": 2186439,
+			"surfaceCount": 1,
+			"surfaceSize": 512,
+			"surfaces": [
+				{
+					"albedo": "assets/terrain/battle_plain_grass/battle_plain_grass_Albedo.png",
+					"normal": "assets/terrain/battle_plain_grass/battle_plain_grass_Normal.png",
+					"pbr": "assets/terrain/battle_plain_grass/battle_plain_grass_MetallicGlossAO.png",
+					"tilling": 1,
+					"angle": 0,
+					"offsetX": 0,
+					"offsetY": 0,
+					"minHeight": 0,
+					"maxHeight": 1
+				}
+			]
+		}
+	]
+}

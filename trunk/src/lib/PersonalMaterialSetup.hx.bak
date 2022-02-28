@@ -1,0 +1,18 @@
+package lib;
+
+
+@:expose
+class PersonalMaterialSetup extends h3d.mat.PbrMaterialSetup {
+
+	public function new() {
+		super("PBR");
+		displayName = "Personal";
+	}
+
+
+	#if editor
+	override function createRenderer() {
+		return @:privateAccess new gfx.Renderer();
+	}
+	#end
+}

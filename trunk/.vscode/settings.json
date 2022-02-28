@@ -1,0 +1,25 @@
+{
+	"files.exclude": {
+		".vscode": true,
+		"**/.tmp": true,
+		"gfx":true,
+		"dump":true,
+		"**/*.css":true,
+		"res/shaders.*" : true,
+		"api.xml" : true,
+		"props.sav" : true,
+		"openworld.hl" : true
+	},
+	"files.trimTrailingWhitespace": true,
+	"files.hotExit": "off",
+	"less.compile": {
+		"main": "${workspaceRoot}/res/ui/styles/all.less"
+	},
+	"less.validate": false,
+	"editor.insertSpaces": false,
+	"haxe.codeGeneration": {
+		"imports": {
+			"enableAutoImports": false
+		}
+	}
+}

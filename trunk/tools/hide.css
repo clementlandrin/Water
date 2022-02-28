@@ -1,0 +1,108 @@
+.cdb .cdb-sheet th.start {
+  width: 15px;
+}
+.tile {
+  zoom: 0.6;
+  image-rendering: -webkit-optimize-contrast !important;
+}
+.hide-tileselect .tile {
+  zoom: 1;
+}
+.cdb-sheet .n_id,
+.cdb-sheet .t_ref {
+  color: #b38caa;
+}
+.cdb-sheet .t_enum {
+  color: #53ccae;
+}
+.cdb-sheet .t_flags {
+  color: #798cc0;
+}
+.cdb-sheet .n_desc {
+  color: #81a5ad;
+}
+.cdb-sheet.s_element .n_npc,
+.cdb-sheet.s_element .n_items,
+.cdb-sheet.s_element .n_props,
+.cdb-sheet.s_element .n_notes {
+  width: 10%;
+}
+.cdb-sheet.s_skill .tile {
+  zoom: 1;
+}
+.cdb-sheet.s_mission .n_id {
+  width: 100px;
+}
+.cdb-sheet.s_mission .n_title {
+  width: 125px;
+}
+.cdb-sheet.s_mission .n_description,
+.cdb-sheet.s_mission .n_mapDescription {
+  width: 150px;
+}
+.cdb-sheet.s_mission .t_int {
+  width: 60px !important;
+}
+.cdb-sheet.s_mission .n_amount,
+.cdb-sheet.s_mission .n_maxOcc,
+.cdb-sheet.s_mission .n_weight,
+.cdb-sheet.s_mission .n_nbDone,
+.cdb-sheet.s_mission .n_setting {
+  width: 40px !important;
+}
+.cdb-sheet.s_trait .n_id {
+  width: 150px;
+}
+.cdb-sheet.s_trait .n_name {
+  width: 200px;
+}
+.cdb-sheet.s_trait .n_actionName {
+  width: 150px;
+}
+.cdb-sheet.s_item .n_type {
+  width: 80px;
+}
+.cdb-sheet.s_item .n_rarity {
+  width: 55px;
+  text-align: center;
+}
+.cdb-sheet.s_item .n_tool {
+  width: 100px;
+}
+.cdb-sheet.s_item .n_baseBonus {
+  width: 100px;
+}
+.cdb-sheet.s_craft .n_tool {
+  width: 150px;
+}
+.cdb-sheet.s_craft .n_recipe {
+  text-overflow: unset;
+}
+.cdb-sheet.s_unitClass .n_notes {
+  width: 60px;
+}
+.cdb-sheet.s_unitPattern .n_id,
+.cdb-sheet.s_bonus .n_id,
+.cdb-sheet.s_attribute .n_id {
+  width: 250px;
+}
+.cdb-sheet.s_constant .n_value {
+  width: 60px;
+}
+.cdb-sheet.s_levelProps .n_kind {
+  width: 200px;
+}
+.cdb-sheet.s_sound .n_gameObject {
+  width: 175px;
+}
+.cdb-sheet.s_sound .n_status {
+  width: 150px;
+}
+.cdb-sheet .t_float,
+.cdb-sheet .t_bool,
+.cdb-sheet .t_int {
+  width: 32px !important;
+}
+.detached .n_vars {
+  width: 700;
+}

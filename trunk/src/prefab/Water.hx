@@ -30,6 +30,13 @@ class WaterShader extends hxsl.Shader {
 		@param var opacityPower : Float;
 		@param var maxDepth: Float;
 
+		@param var from : Vec2;
+		@param var to : Vec2;
+		@param var rotate : Vec2;
+		@param var translate : Vec2;
+		@param var invScale : Vec2;
+		@param var normalHeightTexture : Sampler2D;
+
 		var relativePosition : Vec3;
 		var projectedPosition : Vec4;
 		var tangentViewPos : Vec3;
@@ -45,12 +52,21 @@ class WaterShader extends hxsl.Shader {
 		}
 
 		function fragment() {
+			var rotatePos = transformedPosition.xy + translate;
+			rotatePos = vec2(rotatePos.x * rotate.x - rotatePos.y * rotate.y, rotatePos.x * rotate.y + rotatePos.y * rotate.x);
+			rotatePos *= invScale;
+			var terrainUV = (rotatePos - from) / (abs(to) + abs(from));
+			var terrainUV = (rotatePos - from) / (abs(to) + abs(from));
+			var terrainHeightNormal = normalHeightTexture.get(terrainUV).rgba;
+			var terrainHeight = terrainHeightNormal.a;
+			var waterDepth = transformedPosition.z - terrainHeight;
+
 			var screenPos = projectedPosition.xy / projectedPosition.w;
 			var depth = depthMap.get(screenToUv(screenPos));
 			var ruv = vec4( screenPos, depth, 1 );
 			var ppos = ruv * camera.inverseViewProj;
 			var wpos = ppos.xyz / ppos.w;
-			var waterDepth = distance(wpos.xyz, transformedPosition);
+			//var waterDepth = distance(wpos.xyz, transformedPosition);
 
 			var p0 = 0.0;
 			var p1 = 0.6;
@@ -81,6 +97,11 @@ class Water extends hrt.prefab.terrain.Terrain {
 
 	override function makeInstance( ctx : hrt.prefab.Context ) : hrt.prefab.Context {
 		ctx = super.makeInstance(ctx);
+		var t = cast ctx.local3d.getScene().find( o -> Std.isOfType(o, prefab.terrain.TerrainMesh) ? o : null);
+		if( t != null ) {
+			var terrain  : prefab.terrain.TerrainMesh = cast t;
+			terrain.syncWaterShader(waterShader);
+		}
 		return ctx;
 	}
 
@@ -100,6 +121,7 @@ class Water extends hrt.prefab.terrain.Terrain {
 			t.material.mainPass.setPassName("decal");
 			t.material.mainPass.setBlendMode(Alpha);
 			t.material.mainPass.depthWrite = false;
+			t.material.mainPass.culling = None;
 			var terrainShader = t.material.mainPass.getShader(hrt.shader.Terrain);
 			if ( terrainShader != null )
 				t.material.mainPass.removeShader(terrainShader);

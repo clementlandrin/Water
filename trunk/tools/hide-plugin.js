@@ -310,6 +310,11 @@ prefab.TerrainAlphaBlend.prototype = $extend(hrt.prefab.Shader.prototype,{
 	,__class__: prefab.TerrainAlphaBlend
 });
 prefab.WaterShader = $hxClasses["prefab.WaterShader"] = function() {
+	this.invScale__ = new h3d.Vector();
+	this.translate__ = new h3d.Vector();
+	this.rotate__ = new h3d.Vector();
+	this.to__ = new h3d.Vector();
+	this.from__ = new h3d.Vector();
 	this.maxDepth__ = 0;
 	this.opacityPower__ = 0;
 	this.roughness__ = 0;
@@ -364,6 +369,48 @@ prefab.WaterShader.prototype = $extend(hxsl.Shader.prototype,{
 	,set_maxDepth: function(_v) {
 		return this.maxDepth__ = _v;
 	}
+	,from__: null
+	,get_from: function() {
+		return this.from__;
+	}
+	,set_from: function(_v) {
+		return this.from__ = _v;
+	}
+	,to__: null
+	,get_to: function() {
+		return this.to__;
+	}
+	,set_to: function(_v) {
+		return this.to__ = _v;
+	}
+	,rotate__: null
+	,get_rotate: function() {
+		return this.rotate__;
+	}
+	,set_rotate: function(_v) {
+		return this.rotate__ = _v;
+	}
+	,translate__: null
+	,get_translate: function() {
+		return this.translate__;
+	}
+	,set_translate: function(_v) {
+		return this.translate__ = _v;
+	}
+	,invScale__: null
+	,get_invScale: function() {
+		return this.invScale__;
+	}
+	,set_invScale: function(_v) {
+		return this.invScale__ = _v;
+	}
+	,normalHeightTexture__: null
+	,get_normalHeightTexture: function() {
+		return this.normalHeightTexture__;
+	}
+	,set_normalHeightTexture: function(_v) {
+		return this.normalHeightTexture__ = _v;
+	}
 	,updateConstants: function(globals) {
 		this.constBits = 0;
 		this.updateConstantsFinal(globals);
@@ -382,6 +429,18 @@ prefab.WaterShader.prototype = $extend(hxsl.Shader.prototype,{
 			return this.opacityPower__;
 		case 5:
 			return this.maxDepth__;
+		case 6:
+			return this.from__;
+		case 7:
+			return this.to__;
+		case 8:
+			return this.rotate__;
+		case 9:
+			return this.translate__;
+		case 10:
+			return this.invScale__;
+		case 11:
+			return this.normalHeightTexture__;
 		default:
 		}
 		return null;
@@ -407,10 +466,16 @@ prefab.WaterShader.prototype = $extend(hxsl.Shader.prototype,{
 		s.roughness__ = this.roughness__;
 		s.opacityPower__ = this.opacityPower__;
 		s.maxDepth__ = this.maxDepth__;
+		s.from__ = this.from__;
+		s.to__ = this.to__;
+		s.rotate__ = this.rotate__;
+		s.translate__ = this.translate__;
+		s.invScale__ = this.invScale__;
+		s.normalHeightTexture__ = this.normalHeightTexture__;
 		return s;
 	}
 	,__class__: prefab.WaterShader
-	,__properties__: {set_maxDepth:"set_maxDepth",get_maxDepth:"get_maxDepth",set_opacityPower:"set_opacityPower",get_opacityPower:"get_opacityPower",set_roughness:"set_roughness",get_roughness:"get_roughness",set_deepWaterColor:"set_deepWaterColor",get_deepWaterColor:"get_deepWaterColor",set_middleWaterColor:"set_middleWaterColor",get_middleWaterColor:"get_middleWaterColor",set_nearWaterColor:"set_nearWaterColor",get_nearWaterColor:"get_nearWaterColor"}
+	,__properties__: {set_normalHeightTexture:"set_normalHeightTexture",get_normalHeightTexture:"get_normalHeightTexture",set_invScale:"set_invScale",get_invScale:"get_invScale",set_translate:"set_translate",get_translate:"get_translate",set_rotate:"set_rotate",get_rotate:"get_rotate",set_to:"set_to",get_to:"get_to",set_from:"set_from",get_from:"get_from",set_maxDepth:"set_maxDepth",get_maxDepth:"get_maxDepth",set_opacityPower:"set_opacityPower",get_opacityPower:"get_opacityPower",set_roughness:"set_roughness",get_roughness:"get_roughness",set_deepWaterColor:"set_deepWaterColor",get_deepWaterColor:"get_deepWaterColor",set_middleWaterColor:"set_middleWaterColor",get_middleWaterColor:"get_middleWaterColor",set_nearWaterColor:"set_nearWaterColor",get_nearWaterColor:"get_nearWaterColor"}
 });
 prefab.Water = $hxClasses["prefab.Water"] = function(parent) {
 	this.waterShader = new prefab.WaterShader();
@@ -434,6 +499,17 @@ prefab.Water.prototype = $extend(hrt.prefab.terrain.Terrain.prototype,{
 	,waterShader: null
 	,makeInstance: function(ctx) {
 		ctx = hrt.prefab.terrain.Terrain.prototype.makeInstance.call(this,ctx);
+		var t = ctx.local3d.getScene().find(function(o) {
+			if(((o) instanceof prefab.terrain.TerrainMesh)) {
+				return o;
+			} else {
+				return null;
+			}
+		});
+		if(t != null) {
+			var terrain = t;
+			terrain.syncWaterShader(this.waterShader);
+		}
 		return ctx;
 	}
 	,updateInstance: function(ctx,propName) {
@@ -461,6 +537,7 @@ prefab.Water.prototype = $extend(hrt.prefab.terrain.Terrain.prototype,{
 			t.material.passes.setPassName("decal");
 			t.material.passes.setBlendMode(h2d.BlendMode.Alpha);
 			t.material.passes.set_depthWrite(false);
+			t.material.passes.set_culling(h3d.mat.Face.None);
 			var terrainShader = t.material.passes.getShader(hrt.shader.Terrain);
 			if(terrainShader != null) {
 				t.material.passes.removeShader(terrainShader);
@@ -1110,6 +1187,7 @@ prefab.terrain._TerrainMesh.CopyHeightNormalShader.prototype = $extend(h3d.shade
 	,__properties__: $extend(h3d.shader.ScreenShader.prototype.__properties__,{set_to:"set_to",get_to:"get_to",set_from:"set_from",get_from:"get_from",set_sourceNormal:"set_sourceNormal",get_sourceNormal:"get_sourceNormal",set_sourceHeightSize:"set_sourceHeightSize",get_sourceHeightSize:"get_sourceHeightSize",set_sourceHeight:"set_sourceHeight",get_sourceHeight:"get_sourceHeight"})
 });
 prefab.terrain.TerrainMesh = $hxClasses["prefab.terrain.TerrainMesh"] = function(parent) {
+	this.waterShaders = [];
 	this.terrainBlendShaders = [];
 	this.terrainColorShaders = [];
 	this.fromTo = new h3d.Vector();
@@ -1125,6 +1203,7 @@ prefab.terrain.TerrainMesh.prototype = $extend(hrt.prefab.terrain.TerrainMesh.pr
 	,fromTo: null
 	,terrainColorShaders: null
 	,terrainBlendShaders: null
+	,waterShaders: null
 	,onRemove: function() {
 		hrt.prefab.terrain.TerrainMesh.prototype.onRemove.call(this);
 		if(this.normalHeightTexture != null) {
@@ -1481,12 +1560,137 @@ prefab.terrain.TerrainMesh.prototype = $extend(hrt.prefab.terrain.TerrainMesh.pr
 			_this6.z = 0.;
 			_this6.w = 1.;
 		}
+		var _g = 0;
+		var _g1 = this.waterShaders;
+		while(_g < _g1.length) {
+			var s = _g1[_g];
+			++_g;
+			s.normalHeightTexture__ = this.getNormalHeightTexture();
+			var _this = s.from__;
+			var x = this.fromTo.x;
+			var y = this.fromTo.y;
+			if(y == null) {
+				y = 0.;
+			}
+			if(x == null) {
+				x = 0.;
+			}
+			_this.x = x;
+			_this.y = y;
+			_this.z = 0.;
+			_this.w = 1.;
+			var _this1 = s.to__;
+			var x1 = this.fromTo.z;
+			var y1 = this.fromTo.w;
+			if(y1 == null) {
+				y1 = 0.;
+			}
+			if(x1 == null) {
+				x1 = 0.;
+			}
+			_this1.x = x1;
+			_this1.y = y1;
+			_this1.z = 0.;
+			_this1.w = 1.;
+			var _this2 = s.rotate__;
+			var x2 = cos;
+			var y2 = sin;
+			if(y2 == null) {
+				y2 = 0.;
+			}
+			if(x2 == null) {
+				x2 = 0.;
+			}
+			_this2.x = x2;
+			_this2.y = y2;
+			_this2.z = 0.;
+			_this2.w = 1.;
+			var _this3 = s.translate__;
+			var _this4 = this.getAbsPos();
+			var v = null;
+			if(v == null) {
+				v = new h3d.Vector();
+			}
+			var x3 = _this4._41;
+			var y3 = _this4._42;
+			var z = _this4._43;
+			var w = _this4._44;
+			if(w == null) {
+				w = 1.;
+			}
+			if(z == null) {
+				z = 0.;
+			}
+			if(y3 == null) {
+				y3 = 0.;
+			}
+			if(x3 == null) {
+				x3 = 0.;
+			}
+			v.x = x3;
+			v.y = y3;
+			v.z = z;
+			v.w = w;
+			var x4 = -v.x;
+			var _this5 = this.getAbsPos();
+			var v1 = null;
+			if(v1 == null) {
+				v1 = new h3d.Vector();
+			}
+			var x5 = _this5._41;
+			var y4 = _this5._42;
+			var z1 = _this5._43;
+			var w1 = _this5._44;
+			if(w1 == null) {
+				w1 = 1.;
+			}
+			if(z1 == null) {
+				z1 = 0.;
+			}
+			if(y4 == null) {
+				y4 = 0.;
+			}
+			if(x5 == null) {
+				x5 = 0.;
+			}
+			v1.x = x5;
+			v1.y = y4;
+			v1.z = z1;
+			v1.w = w1;
+			var y5 = -v1.y;
+			if(y5 == null) {
+				y5 = 0.;
+			}
+			if(x4 == null) {
+				x4 = 0.;
+			}
+			_this3.x = x4;
+			_this3.y = y5;
+			_this3.z = 0.;
+			_this3.w = 1.;
+			var _this6 = s.invScale__;
+			var x6 = 1. / this.scaleX;
+			var y6 = 1. / this.scaleY;
+			if(y6 == null) {
+				y6 = 0.;
+			}
+			if(x6 == null) {
+				x6 = 0.;
+			}
+			_this6.x = x6;
+			_this6.y = y6;
+			_this6.z = 0.;
+			_this6.w = 1.;
+		}
 	}
 	,syncTerrainColorShader: function(s) {
 		this.terrainColorShaders.push(s);
 	}
 	,syncTerrainAlphaBlendShader: function(s) {
 		this.terrainBlendShaders.push(s);
+	}
+	,syncWaterShader: function(s) {
+		this.waterShaders.push(s);
 	}
 	,bake: function() {
 		if(this.albedoTexture != null) {
@@ -1664,7 +1868,7 @@ if( String.fromCodePoint == null ) String.fromCodePoint = function(c) { return c
 prefab.terrain.TerrainBlendShadowPass.SRC = "HXSLJXByZWZhYi50ZXJyYWluLlRlcnJhaW5CbGVuZFNoYWRvd1Bhc3MCAQpzaGFkb3dQYXNzAgQAAAIIZnJhZ21lbnQOBgAAAQECAAAFAQYEAgECAQEBAgIA";
 prefab.TerrainAlphaBlend.terrainBlendShadowPass = new prefab.terrain.TerrainBlendShadowPass();
 prefab.TerrainAlphaBlend._ = hrt.prefab.Library.register("terrainAlphaBlend",prefab.TerrainAlphaBlend);
-prefab.WaterShader.SRC = "HXSLEnByZWZhYi5XYXRlclNoYWRlchUBBWlucHV0DQEBAghwb3NpdGlvbgULAQEAAQAAAwZnbG9iYWwNAgIEBHRpbWUDAAMABQltb2RlbFZpZXcHAAMBAwAAAAYGb3V0cHV0DQMBBwhwb3NpdGlvbgUMBAYABAAACAZjYW1lcmENBAIJD2ludmVyc2VWaWV3UHJvagcACAAKD2ludmVyc2VWaWV3UHJvagcACAAAAAALCGRlcHRoTWFwEQEAAAAMDm5lYXJXYXRlckNvbG9yBQsCAAANEG1pZGRsZVdhdGVyQ29sb3IFCwIAAA4OZGVlcFdhdGVyQ29sb3IFCwIAAA8Jcm91Z2huZXNzAwIAABAMb3BhY2l0eVBvd2VyAwIAABEIbWF4RGVwdGgDAgAAEhByZWxhdGl2ZVBvc2l0aW9uBQsEAAATEXByb2plY3RlZFBvc2l0aW9uBQwEAAAUDnRhbmdlbnRWaWV3UG9zBQsEAAAVDnRhbmdlbnRGcmFnUG9zBQsEAAAWE3RyYW5zZm9ybWVkUG9zaXRpb24FCwQAABcRdHJhbnNmb3JtZWROb3JtYWwFCwQAABgNdGVycmFpbk5vcm1hbAULBAAAGQpwaXhlbENvbG9yBQwEAAAaBnZlcnRleA4GAAAbCGZyYWdtZW50DgYAAAIAGgAABQIGBAIXBQsJAykOAwEDAAAAAAAA8D8DAQMAAAAAAAAAAAMBAwAAAAAAAAAAAwULBQsGgAoCFgULkgAFCwkDKQ4DAQMAAAAAAAAAAAMBAwAAAAAAAAAAAwYBAQOamZmZmZnJPwMJAwIOAQYACgIWBQsAAAMCBAMDAwMFCwULAAEbAAAFDggcCXNjcmVlblBvcwUKBAAABgIKAhMFDBEABQoKAhMFDAwAAwUKAAgdBWRlcHRoAwQAAAkDPw4CAgsRAQkDOg4BAhwFCgUKAwAIHgNydXYFDAQAAAkDKg4DAhwFCgIdAwEDAAAAAAAA8D8DBQwACB8EcHBvcwUMBAAABgECHgUMAgkHBQwACCAEd3BvcwULBAAABgIKAh8FDJIABQsKAh8FDAwAAwULAAghCndhdGVyRGVwdGgDBAAACQMcDgIKAiAFC5IABQsCFgULAwAIIgJwMAMEAAABAwAAAAAAAAAAAwAIIwJwMQMEAAABAzMzMzMzM+M/AwAIJAJwMgMEAAABAwAAAAAAAPA/AwAIJQF0AwQAAAkDNQ4BBgMBAwAAAAAAAPA/AwYCAiEDAhEDAwMDAAgmCndhdGVyQ29sb3IFCwQAAAkDGA4DAg4FCwkDGA4DAg0FCwIMBQsJAxoOAwIjAwIkAwIlAwMFCwkDGg4DAiIDAiMDAiUDAwULAAgnB29wYWNpdHkDBAAACQMYDgMBA5qZmZmZmck/AwEDAAAAAAAA8D8DCQMIDgIGAwEDAAAAAAAA8D8DAiUDAwIQAwMDAAYECgIZBQyTAwUMCQMqDgICJgULAicDBQwFDAYEAhcFCwkDKQ4DAQMAAAAAAADwPwMBAwAAAAAAAAAAAwEDAAAAAAAAAAADBQsFCwA";
+prefab.WaterShader.SRC = "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";
 prefab.Water._ = hrt.prefab.Library.register("water",prefab.Water);
 prefab.terrain.Terrain._ = hrt.prefab.Library.register("terrain",prefab.terrain.Terrain);
 prefab.terrain.TerrainBlend.SRC = "HXSLG3ByZWZhYi50ZXJyYWluLlRlcnJhaW5CbGVuZBEBBGZyb20FCgIAAAICdG8FCgIAAAMTbm9ybWFsSGVpZ2h0VGV4dHVyZQoCAAAEBXJhbmdlAwIAAAUGcm90YXRlBQoCAAAGCXRyYW5zbGF0ZQUKAgAABwhpbnZTY2FsZQUKAgAACAVERUJVRwICAAEAAAAAAAkKc2hhZG93UGFzcwIEAAAKE3RyYW5zZm9ybWVkUG9zaXRpb24FCwQAAAsRdHJhbnNmb3JtZWROb3JtYWwFCwQAAAwQcmVsYXRpdmVQb3NpdGlvbgULBAAADQpwaXhlbENvbG9yBQwEAAAODXRlcnJhaW5IZWlnaHQDBAAADw10ZXJyYWluTm9ybWFsBQsEAAAQEF9faW5pdF9fZnJhZ21lbnQOBgAAEQhmcmFnbWVudA4GAAACAhAAAAUBBQEGBAIJAgEBAAICAAABEQAABQoIEglyb3RhdGVQb3MFCgQAAAYACgIKBQsRAAUKAgYFCgUKAAYEAhIFCgkDKA4CBgMGAQoCEgUKAAADCgIFBQoAAAMDBgEKAhIFCgQAAwoCBQUKBAADAwMGAAYBCgISBQoAAAMKAgUFCgQAAwMGAQoCEgUKBAADCgIFBQoAAAMDAwUKBQoGgQISBQoCBwUKBQoIEwl0ZXJyYWluVVYFCgQAAAYCBAYDAhIFCgIBBQoFCgUKBAYACQMPDgECAgUKBQoJAw8OAQIBBQoFCgUKBQoFCgAIFBN0ZXJyYWluSGVpZ2h0Tm9ybWFsBQwEAAAKCQMhDgICAwoCEwUKBQyTAwUMAAYEAg4DCgIUBQwMAAMDBgQCDwULCgIUBQySAAULBQsIFQpibGVuZEFtb3V0AwQAAAYDAQMAAAAAAADwPwMJAwgOAgYDAQMAAAAAAADwPwMJAzUOAQYCBAYDCgIKBQsIAAMCDgMDAwIEAwMDAwEDAAAAAAAAAEADAwMACwIIAgYECgINBQySAAULCQMpDgECFQMFCwULBoEKAg0FDAwAAwIVAwMACwYOAgkCBgkKAg0FDAwAAwEDAAAAAAAA8D8DAgIMAAAAAA";

@@ -315,9 +315,11 @@ prefab.WaterShader = $hxClasses["prefab.WaterShader"] = function() {
 	this.rotate__ = new h3d.Vector();
 	this.to__ = new h3d.Vector();
 	this.from__ = new h3d.Vector();
+	this.shoreDepth__ = 0;
+	this.waveIntensity__ = 0;
 	this.maxDepth__ = 0;
 	this.opacityPower__ = 0;
-	this.roughness__ = 0;
+	this.waterRoughness__ = 0;
 	this.deepWaterColor__ = new h3d.Vector();
 	this.middleWaterColor__ = new h3d.Vector();
 	this.nearWaterColor__ = new h3d.Vector();
@@ -348,12 +350,12 @@ prefab.WaterShader.prototype = $extend(hxsl.Shader.prototype,{
 	,set_deepWaterColor: function(_v) {
 		return this.deepWaterColor__ = _v;
 	}
-	,roughness__: null
-	,get_roughness: function() {
-		return this.roughness__;
+	,waterRoughness__: null
+	,get_waterRoughness: function() {
+		return this.waterRoughness__;
 	}
-	,set_roughness: function(_v) {
-		return this.roughness__ = _v;
+	,set_waterRoughness: function(_v) {
+		return this.waterRoughness__ = _v;
 	}
 	,opacityPower__: null
 	,get_opacityPower: function() {
@@ -368,6 +370,20 @@ prefab.WaterShader.prototype = $extend(hxsl.Shader.prototype,{
 	}
 	,set_maxDepth: function(_v) {
 		return this.maxDepth__ = _v;
+	}
+	,waveIntensity__: null
+	,get_waveIntensity: function() {
+		return this.waveIntensity__;
+	}
+	,set_waveIntensity: function(_v) {
+		return this.waveIntensity__ = _v;
+	}
+	,shoreDepth__: null
+	,get_shoreDepth: function() {
+		return this.shoreDepth__;
+	}
+	,set_shoreDepth: function(_v) {
+		return this.shoreDepth__ = _v;
 	}
 	,from__: null
 	,get_from: function() {
@@ -424,22 +440,26 @@ prefab.WaterShader.prototype = $extend(hxsl.Shader.prototype,{
 		case 2:
 			return this.deepWaterColor__;
 		case 3:
-			return this.roughness__;
+			return this.waterRoughness__;
 		case 4:
 			return this.opacityPower__;
 		case 5:
 			return this.maxDepth__;
 		case 6:
-			return this.from__;
+			return this.waveIntensity__;
 		case 7:
-			return this.to__;
+			return this.shoreDepth__;
 		case 8:
-			return this.rotate__;
+			return this.from__;
 		case 9:
-			return this.translate__;
+			return this.to__;
 		case 10:
-			return this.invScale__;
+			return this.rotate__;
 		case 11:
+			return this.translate__;
+		case 12:
+			return this.invScale__;
+		case 13:
 			return this.normalHeightTexture__;
 		default:
 		}
@@ -448,11 +468,15 @@ prefab.WaterShader.prototype = $extend(hxsl.Shader.prototype,{
 	,getParamFloatValue: function(index) {
 		switch(index) {
 		case 3:
-			return this.roughness__;
+			return this.waterRoughness__;
 		case 4:
 			return this.opacityPower__;
 		case 5:
 			return this.maxDepth__;
+		case 6:
+			return this.waveIntensity__;
+		case 7:
+			return this.shoreDepth__;
 		default:
 		}
 		return 0.;
@@ -463,9 +487,11 @@ prefab.WaterShader.prototype = $extend(hxsl.Shader.prototype,{
 		s.nearWaterColor__ = this.nearWaterColor__;
 		s.middleWaterColor__ = this.middleWaterColor__;
 		s.deepWaterColor__ = this.deepWaterColor__;
-		s.roughness__ = this.roughness__;
+		s.waterRoughness__ = this.waterRoughness__;
 		s.opacityPower__ = this.opacityPower__;
 		s.maxDepth__ = this.maxDepth__;
+		s.waveIntensity__ = this.waveIntensity__;
+		s.shoreDepth__ = this.shoreDepth__;
 		s.from__ = this.from__;
 		s.to__ = this.to__;
 		s.rotate__ = this.rotate__;
@@ -475,10 +501,12 @@ prefab.WaterShader.prototype = $extend(hxsl.Shader.prototype,{
 		return s;
 	}
 	,__class__: prefab.WaterShader
-	,__properties__: {set_normalHeightTexture:"set_normalHeightTexture",get_normalHeightTexture:"get_normalHeightTexture",set_invScale:"set_invScale",get_invScale:"get_invScale",set_translate:"set_translate",get_translate:"get_translate",set_rotate:"set_rotate",get_rotate:"get_rotate",set_to:"set_to",get_to:"get_to",set_from:"set_from",get_from:"get_from",set_maxDepth:"set_maxDepth",get_maxDepth:"get_maxDepth",set_opacityPower:"set_opacityPower",get_opacityPower:"get_opacityPower",set_roughness:"set_roughness",get_roughness:"get_roughness",set_deepWaterColor:"set_deepWaterColor",get_deepWaterColor:"get_deepWaterColor",set_middleWaterColor:"set_middleWaterColor",get_middleWaterColor:"get_middleWaterColor",set_nearWaterColor:"set_nearWaterColor",get_nearWaterColor:"get_nearWaterColor"}
+	,__properties__: {set_normalHeightTexture:"set_normalHeightTexture",get_normalHeightTexture:"get_normalHeightTexture",set_invScale:"set_invScale",get_invScale:"get_invScale",set_translate:"set_translate",get_translate:"get_translate",set_rotate:"set_rotate",get_rotate:"get_rotate",set_to:"set_to",get_to:"get_to",set_from:"set_from",get_from:"get_from",set_shoreDepth:"set_shoreDepth",get_shoreDepth:"get_shoreDepth",set_waveIntensity:"set_waveIntensity",get_waveIntensity:"get_waveIntensity",set_maxDepth:"set_maxDepth",get_maxDepth:"get_maxDepth",set_opacityPower:"set_opacityPower",get_opacityPower:"get_opacityPower",set_waterRoughness:"set_waterRoughness",get_waterRoughness:"get_waterRoughness",set_deepWaterColor:"set_deepWaterColor",get_deepWaterColor:"get_deepWaterColor",set_middleWaterColor:"set_middleWaterColor",get_middleWaterColor:"get_middleWaterColor",set_nearWaterColor:"set_nearWaterColor",get_nearWaterColor:"get_nearWaterColor"}
 });
 prefab.Water = $hxClasses["prefab.Water"] = function(parent) {
 	this.waterShader = new prefab.WaterShader();
+	this.shoreDepth = 1.0;
+	this.waveIntensity = 1.0;
 	this.maxDepth = 5.0;
 	this.opacityPower = 5.0;
 	this.roughness = 0.0;
@@ -496,6 +524,8 @@ prefab.Water.prototype = $extend(hrt.prefab.terrain.Terrain.prototype,{
 	,roughness: null
 	,opacityPower: null
 	,maxDepth: null
+	,waveIntensity: null
+	,shoreDepth: null
 	,waterShader: null
 	,makeInstance: function(ctx) {
 		ctx = hrt.prefab.terrain.Terrain.prototype.makeInstance.call(this,ctx);
@@ -523,9 +553,11 @@ prefab.Water.prototype = $extend(hrt.prefab.terrain.Terrain.prototype,{
 		var c = this.deepWaterColor;
 		var s = 0.00392156862745098;
 		this.waterShader.deepWaterColor__ = new h3d.Vector((c >> 16 & 255) * s,(c >> 8 & 255) * s,(c & 255) * s,(c >>> 24) * s);
-		this.waterShader.roughness__ = this.roughness;
+		this.waterShader.waterRoughness__ = this.roughness;
 		this.waterShader.opacityPower__ = this.opacityPower;
 		this.waterShader.maxDepth__ = this.maxDepth;
+		this.waterShader.waveIntensity__ = this.waveIntensity;
+		this.waterShader.shoreDepth__ = this.shoreDepth;
 	}
 	,loadTiles: function(ctx) {
 		hrt.prefab.terrain.Terrain.prototype.loadTiles.call(this,ctx);
@@ -558,7 +590,7 @@ prefab.Water.prototype = $extend(hrt.prefab.terrain.Terrain.prototype,{
 	,edit: function(ctx) {
 		var _gthis = this;
 		hrt.prefab.terrain.Terrain.prototype.edit.call(this,ctx);
-		ctx.properties.add($("\r\n\t\t\t<div class=\"group\" name=\"Surface\">\r\n\t\t\t\t<dl>\r\n\t\t\t\t\t<dt>Cells</dt><dd><input type=\"range\" min=\"1\" max=\"100\" step=\"1\" field=\"cellCount\"/></dd>\r\n\t\t\t\t</dl>\r\n\t\t\t</div>\r\n\t\t\t<div class=\"group\" name=\"Color\">\r\n\t\t\t\t<dl>\r\n\t\t\t\t\t<dt>Near Water Color </dt><dd><input type=\"color\" field=\"nearWaterColor\"/></dd>\r\n\t\t\t\t\t<dt>Middle Water Color</dt><dd><input type=\"color\" field=\"middleWaterColor\"/></dd>\r\n\t\t\t\t\t<dt>Deep Water Color</dt><dd><input type=\"color\" field=\"deepWaterColor\"/></dd>\r\n\t\t\t\t\t<dt>Roughness</dt><dd><input type=\"range\" min=\"0\" max=\"1\" field=\"roughness\"/></dd>\r\n\t\t\t\t\t<dt>Opacity Power</dt><dd><input type=\"range\" min=\"0\" max=\"5\" field=\"opacityPower\"/></dd>\r\n\t\t\t\t\t<dt>Lake max depth</dt><dd><input type=\"range\" min=\"0\" max=\"4\" field=\"maxDepth\"/></dd>\r\n\t\t\t\t</dl>\r\n\t\t\t</div>\r\n\t\t\t<div class=\"group\" name=\"Color Noise\">\r\n\t\t\t\t<dl>\r\n\t\t\t\t\t<dt>Texture</dt><dd><input type=\"texturepath\" field=\"colorNoiseTexture\"/></dd>\r\n\t\t\t\t\t<dt>Scale</dt><dd><input type=\"range\" min=\"0\" max =\"1\" step=\"0.01\" field=\"colorNoiseScale\"/></dd>\r\n\t\t\t\t\t<dt>Strength</dt><dd><input type=\"range\" min=\"0\" max =\"1\" step=\"0.01\" field=\"colorNoiseStrength\"/></dd>\r\n\t\t\t\t</dl>\r\n\t\t\t</div>\r\n\t\t\t<div class=\"group\" name=\"Wave\">\r\n\t\t\t\t<dl>\r\n\t\t\t\t\t<dt>NormalMap</dt><dd><input type=\"texturepath\" field=\"normalMap\"/></dd>\r\n\t\t\t\t\t<dt>Wave Intensity</dt><dd><input type=\"range\" min=\"0\" max=\"10\" field=\"waveIntensity\"/></dd>\r\n\t\t\t\t\t<dt>Wave Scale</dt><dd><input type=\"range\" min=\"0\" max=\"4\" field=\"waveScale\"/></dd>\r\n\t\t\t\t\t<dt>Wave Speed</dt><dd><input type=\"range\" min=\"0\" max=\"1\" field=\"waveSpeed\"/></dd>\r\n\t\t\t\t\t<dt>2d Wave Scale</dt><dd><input type=\"range\" min=\"0\" max=\"4\" field=\"secondWaveScale\"/></dd>\r\n\t\t\t\t\t<dt>2d Wave Rotate</dt><dd><input type=\"range\" min=\"-180\" max=\"180\" field=\"secondWaveRotate\"/></dd>\r\n\t\t\t\t\t<dt>2d Wave Speed</dt><dd><input type=\"range\" min=\"0\" max=\"1\" field=\"secondWaveSpeed\"/></dd>\r\n\t\t\t\t</dl>\r\n\t\t\t</div>\r\n\t\t\t<div class=\"group\" name=\"Reflections\">\r\n\t\t\t\t<dl>\r\n\t\t\t\t\t<dt>Reflections</dt><dd><input type=\"checkbox\" field=\"reflections\"/></dd>\r\n\t\t\t\t</dl>\r\n\t\t\t</div>\r\n\t\t\t<div class=\"group\" name=\"Collisions\">\r\n\t\t\t\t<dl>\r\n\t\t\t\t\t<dt>Collide WorldMap</dt><dd><input type=\"checkbox\" field=\"collide\"/></dd>\r\n\t\t\t\t</dl>\r\n\t\t\t</div>\r\n\t\t\t"),this,function(pname) {
+		ctx.properties.add($("\r\n\t\t\t<div class=\"group\" name=\"Surface\">\r\n\t\t\t\t<dl>\r\n\t\t\t\t\t<dt>Cells</dt><dd><input type=\"range\" min=\"1\" max=\"100\" step=\"1\" field=\"cellCount\"/></dd>\r\n\t\t\t\t</dl>\r\n\t\t\t</div>\r\n\t\t\t<div class=\"group\" name=\"Color\">\r\n\t\t\t\t<dl>\r\n\t\t\t\t\t<dt>Near Water Color </dt><dd><input type=\"color\" field=\"nearWaterColor\"/></dd>\r\n\t\t\t\t\t<dt>Middle Water Color</dt><dd><input type=\"color\" field=\"middleWaterColor\"/></dd>\r\n\t\t\t\t\t<dt>Deep Water Color</dt><dd><input type=\"color\" field=\"deepWaterColor\"/></dd>\r\n\t\t\t\t\t<dt>Roughness</dt><dd><input type=\"range\" min=\"0\" max=\"1\" field=\"roughness\"/></dd>\r\n\t\t\t\t\t<dt>Opacity Power</dt><dd><input type=\"range\" min=\"0\" max=\"5\" field=\"opacityPower\"/></dd>\r\n\t\t\t\t\t<dt>Lake max depth</dt><dd><input type=\"range\" min=\"0\" max=\"4\" field=\"maxDepth\"/></dd>\r\n\t\t\t\t</dl>\r\n\t\t\t</div>\r\n\t\t\t<div class=\"group\" name=\"Color Noise\">\r\n\t\t\t\t<dl>\r\n\t\t\t\t\t<dt>Texture</dt><dd><input type=\"texturepath\" field=\"colorNoiseTexture\"/></dd>\r\n\t\t\t\t\t<dt>Scale</dt><dd><input type=\"range\" min=\"0\" max =\"1\" step=\"0.01\" field=\"colorNoiseScale\"/></dd>\r\n\t\t\t\t\t<dt>Strength</dt><dd><input type=\"range\" min=\"0\" max =\"1\" step=\"0.01\" field=\"colorNoiseStrength\"/></dd>\r\n\t\t\t\t</dl>\r\n\t\t\t</div>\r\n\t\t\t<div class=\"group\" name=\"Wave\">\r\n\t\t\t\t<dl>\r\n\t\t\t\t\t<dt>Wave Intensity</dt><dd><input type=\"range\" min=\"0\" max=\"10\" field=\"waveIntensity\"/></dd>\r\n\t\t\t\t\t<dt>Wave Speed</dt><dd><input type=\"range\" min=\"0\" max=\"1\" field=\"waveSpeed\"/></dd>\r\n\t\t\t\t</dl>\r\n\t\t\t</div>\r\n\t\t\t<div class=\"group\" name=\"Shore\">\r\n\t\t\t\t<dl>\r\n\t\t\t\t\t<dt>Shore depth</dt><dd><input type=\"range\" min=\"0\" max=\"10\" field=\"shoreDepth\"/></dd>\r\n\t\t\t\t</dl>\r\n\t\t\t</div>\r\n\t\t\t"),this,function(pname) {
 			ctx.onChange(_gthis,pname);
 		});
 	}
@@ -582,6 +614,12 @@ prefab.Water.prototype = $extend(hrt.prefab.terrain.Terrain.prototype,{
 		if(this.maxDepth != 5.0) {
 			obj.maxDepth = this.maxDepth;
 		}
+		if(this.waveIntensity != 1.0) {
+			obj.waveIntensity = this.waveIntensity;
+		}
+		if(this.shoreDepth != 1.0) {
+			obj.shoreDepth = this.shoreDepth;
+		}
 	}
 	,loadSerializedFields: function(obj) {
 		hrt.prefab.terrain.Terrain.prototype.loadSerializedFields.call(this,obj);
@@ -591,6 +629,8 @@ prefab.Water.prototype = $extend(hrt.prefab.terrain.Terrain.prototype,{
 		this.roughness = obj.roughness == null ? 0.0 : obj.roughness;
 		this.opacityPower = obj.opacityPower == null ? 5.0 : obj.opacityPower;
 		this.maxDepth = obj.maxDepth == null ? 5.0 : obj.maxDepth;
+		this.waveIntensity = obj.waveIntensity == null ? 1.0 : obj.waveIntensity;
+		this.shoreDepth = obj.shoreDepth == null ? 1.0 : obj.shoreDepth;
 	}
 	,copySerializedFields: function(p) {
 		hrt.prefab.terrain.Terrain.prototype.copySerializedFields.call(this,p);
@@ -601,6 +641,8 @@ prefab.Water.prototype = $extend(hrt.prefab.terrain.Terrain.prototype,{
 		this.roughness = p1.roughness;
 		this.opacityPower = p1.opacityPower;
 		this.maxDepth = p1.maxDepth;
+		this.waveIntensity = p1.waveIntensity;
+		this.shoreDepth = p1.shoreDepth;
 	}
 	,__class__: prefab.Water
 });
@@ -1868,7 +1910,7 @@ if( String.fromCodePoint == null ) String.fromCodePoint = function(c) { return c
 prefab.terrain.TerrainBlendShadowPass.SRC = "HXSLJXByZWZhYi50ZXJyYWluLlRlcnJhaW5CbGVuZFNoYWRvd1Bhc3MCAQpzaGFkb3dQYXNzAgQAAAIIZnJhZ21lbnQOBgAAAQECAAAFAQYEAgECAQEBAgIA";
 prefab.TerrainAlphaBlend.terrainBlendShadowPass = new prefab.terrain.TerrainBlendShadowPass();
 prefab.TerrainAlphaBlend._ = hrt.prefab.Library.register("terrainAlphaBlend",prefab.TerrainAlphaBlend);
-prefab.WaterShader.SRC = "HXSLEnByZWZhYi5XYXRlclNoYWRlchsBBWlucHV0DQEBAghwb3NpdGlvbgULAQEAAQAAAwZnbG9iYWwNAgIEBHRpbWUDAAMABQltb2RlbFZpZXcHAAMBAwAAAAYGb3V0cHV0DQMBBwhwb3NpdGlvbgUMBAYABAAACAZjYW1lcmENBAIJD2ludmVyc2VWaWV3UHJvagcACAAKD2ludmVyc2VWaWV3UHJvagcACAAAAAALCGRlcHRoTWFwEQEAAAAMDm5lYXJXYXRlckNvbG9yBQsCAAANEG1pZGRsZVdhdGVyQ29sb3IFCwIAAA4OZGVlcFdhdGVyQ29sb3IFCwIAAA8Jcm91Z2huZXNzAwIAABAMb3BhY2l0eVBvd2VyAwIAABEIbWF4RGVwdGgDAgAAEgRmcm9tBQoCAAATAnRvBQoCAAAUBnJvdGF0ZQUKAgAAFQl0cmFuc2xhdGUFCgIAABYIaW52U2NhbGUFCgIAABcTbm9ybWFsSGVpZ2h0VGV4dHVyZQoCAAAYEHJlbGF0aXZlUG9zaXRpb24FCwQAABkRcHJvamVjdGVkUG9zaXRpb24FDAQAABoOdGFuZ2VudFZpZXdQb3MFCwQAABsOdGFuZ2VudEZyYWdQb3MFCwQAABwTdHJhbnNmb3JtZWRQb3NpdGlvbgULBAAAHRF0cmFuc2Zvcm1lZE5vcm1hbAULBAAAHg10ZXJyYWluTm9ybWFsBQsEAAAfCnBpeGVsQ29sb3IFDAQAACAGdmVydGV4DgYAACEIZnJhZ21lbnQOBgAAAgAgAAAFAgYEAh0FCwkDKQ4DAQMAAAAAAADwPwMBAwAAAAAAAAAAAwEDAAAAAAAAAAADBQsFCwaACgIcBQuSAAULCQMpDgMBAwAAAAAAAAAAAwEDAAAAAAAAAAADBgEBA5qZmZmZmck/AwkDAg4BBgAKAhwFCwAAAwIEAwMDAwULBQsAASEAAAUVCCIJcm90YXRlUG9zBQoEAAAGAAoCHAULEQAFCgIVBQoFCgAGBAIiBQoJAygOAgYDBgEKAiIFCgAAAwoCFAUKAAADAwYBCgIiBQoEAAMKAhQFCgQAAwMDBgAGAQoCIgUKAAADCgIUBQoEAAMDBgEKAiIFCgQAAwoCFAUKAAADAwMFCgUKBoECIgUKAhYFCgUKCCMJdGVycmFpblVWBQoEAAAGAgQGAwIiBQoCEgUKBQoFCgQGAAkDDw4BAhMFCgUKCQMPDgECEgUKBQoFCgUKBQoACCQJdGVycmFpblVWBQoEAAAGAgQGAwIiBQoCEgUKBQoFCgQGAAkDDw4BAhMFCgUKCQMPDgECEgUKBQoFCgUKBQoACCUTdGVycmFpbkhlaWdodE5vcm1hbAUMBAAACgkDIQ4CAhcKAiQFCgUMkwMFDAAIJg10ZXJyYWluSGVpZ2h0AwQAAAoCJQUMDAADAAgnCndhdGVyRGVwdGgDBAAABgMKAhwFCwgAAwImAwMACCgJc2NyZWVuUG9zBQoEAAAGAgoCGQUMEQAFCgoCGQUMDAADBQoACCkFZGVwdGgDBAAACQM/DgICCxEBCQM6DgECKAUKBQoDAAgqA3J1dgUMBAAACQMqDgMCKAUKAikDAQMAAAAAAADwPwMFDAAIKwRwcG9zBQwEAAAGAQIqBQwCCQcFDAAILAR3cG9zBQsEAAAGAgoCKwUMkgAFCwoCKwUMDAADBQsACC0CcDADBAAAAQMAAAAAAAAAAAMACC4CcDEDBAAAAQMzMzMzMzPjPwMACC8CcDIDBAAAAQMAAAAAAADwPwMACDABdAMEAAAJAzUOAQYDAQMAAAAAAADwPwMGAgInAwIRAwMDAwAIMQp3YXRlckNvbG9yBQsEAAAJAxgOAwIOBQsJAxgOAwINBQsCDAULCQMaDgMCLgMCLwMCMAMDBQsJAxoOAwItAwIuAwIwAwMFCwAIMgdvcGFjaXR5AwQAAAkDGA4DAQOamZmZmZnJPwMBAwAAAAAAAPA/AwkDCA4CBgMBAwAAAAAAAPA/AwIwAwMCEAMDAwAGBAoCHwUMkwMFDAkDKg4CAjEFCwIyAwUMBQwGBAIdBQsJAykOAwEDAAAAAAAA8D8DAQMAAAAAAAAAAAMBAwAAAAAAAAAAAwULBQsA";
+prefab.WaterShader.SRC = "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";
 prefab.Water._ = hrt.prefab.Library.register("water",prefab.Water);
 prefab.terrain.Terrain._ = hrt.prefab.Library.register("terrain",prefab.terrain.Terrain);
 prefab.terrain.TerrainBlend.SRC = "HXSLG3ByZWZhYi50ZXJyYWluLlRlcnJhaW5CbGVuZBEBBGZyb20FCgIAAAICdG8FCgIAAAMTbm9ybWFsSGVpZ2h0VGV4dHVyZQoCAAAEBXJhbmdlAwIAAAUGcm90YXRlBQoCAAAGCXRyYW5zbGF0ZQUKAgAABwhpbnZTY2FsZQUKAgAACAVERUJVRwICAAEAAAAAAAkKc2hhZG93UGFzcwIEAAAKE3RyYW5zZm9ybWVkUG9zaXRpb24FCwQAAAsRdHJhbnNmb3JtZWROb3JtYWwFCwQAAAwQcmVsYXRpdmVQb3NpdGlvbgULBAAADQpwaXhlbENvbG9yBQwEAAAODXRlcnJhaW5IZWlnaHQDBAAADw10ZXJyYWluTm9ybWFsBQsEAAAQEF9faW5pdF9fZnJhZ21lbnQOBgAAEQhmcmFnbWVudA4GAAACAhAAAAUBBQEGBAIJAgEBAAICAAABEQAABQoIEglyb3RhdGVQb3MFCgQAAAYACgIKBQsRAAUKAgYFCgUKAAYEAhIFCgkDKA4CBgMGAQoCEgUKAAADCgIFBQoAAAMDBgEKAhIFCgQAAwoCBQUKBAADAwMGAAYBCgISBQoAAAMKAgUFCgQAAwMGAQoCEgUKBAADCgIFBQoAAAMDAwUKBQoGgQISBQoCBwUKBQoIEwl0ZXJyYWluVVYFCgQAAAYCBAYDAhIFCgIBBQoFCgUKBAYACQMPDgECAgUKBQoJAw8OAQIBBQoFCgUKBQoFCgAIFBN0ZXJyYWluSGVpZ2h0Tm9ybWFsBQwEAAAKCQMhDgICAwoCEwUKBQyTAwUMAAYEAg4DCgIUBQwMAAMDBgQCDwULCgIUBQySAAULBQsIFQpibGVuZEFtb3V0AwQAAAYDAQMAAAAAAADwPwMJAwgOAgYDAQMAAAAAAADwPwMJAzUOAQYCBAYDCgIKBQsIAAMCDgMDAwIEAwMDAwEDAAAAAAAAAEADAwMACwIIAgYECgINBQySAAULCQMpDgECFQMFCwULBoEKAg0FDAwAAwIVAwMACwYOAgkCBgkKAg0FDAwAAwEDAAAAAAAA8D8DAgIMAAAAAA";

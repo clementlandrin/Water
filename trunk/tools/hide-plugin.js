@@ -198,6 +198,117 @@ js.node.zlib.Inflate = require("zlib").Inflate;
 js.node.zlib.InflateRaw = require("zlib").InflateRaw;
 js.node.zlib.Unzip = require("zlib").Unzip;
 var prefab = prefab || {};
+if(!prefab.terrain) prefab.terrain = {};
+prefab.terrain.TerrainBlendShadowPass = $hxClasses["prefab.terrain.TerrainBlendShadowPass"] = function() {
+	hxsl.Shader.call(this);
+};
+prefab.terrain.TerrainBlendShadowPass.__name__ = "prefab.terrain.TerrainBlendShadowPass";
+prefab.terrain.TerrainBlendShadowPass._SHADER = null;
+prefab.terrain.TerrainBlendShadowPass.__super__ = hxsl.Shader;
+prefab.terrain.TerrainBlendShadowPass.prototype = $extend(hxsl.Shader.prototype,{
+	updateConstants: function(globals) {
+		this.constBits = 0;
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		return null;
+	}
+	,getParamFloatValue: function(index) {
+		return 0.;
+	}
+	,__class__: prefab.terrain.TerrainBlendShadowPass
+});
+prefab.TerrainAlphaBlend = $hxClasses["prefab.TerrainAlphaBlend"] = function(parent) {
+	this.DEBUG = false;
+	this.discardThreshold = 0.25;
+	this.range = 0.25;
+	hrt.prefab.Shader.call(this,parent);
+};
+prefab.TerrainAlphaBlend.__name__ = "prefab.TerrainAlphaBlend";
+prefab.TerrainAlphaBlend.__super__ = hrt.prefab.Shader;
+prefab.TerrainAlphaBlend.prototype = $extend(hrt.prefab.Shader.prototype,{
+	range: null
+	,discardThreshold: null
+	,DEBUG: null
+	,makeInstance: function(ctx) {
+		var ctx1 = hrt.prefab.Shader.prototype.makeInstance.call(this,ctx);
+		var _g = 0;
+		var _g1 = ctx1.local3d.getMaterials();
+		while(_g < _g1.length) {
+			var m = _g1[_g];
+			++_g;
+			m.passes.setBlendMode(h2d.BlendMode.Alpha);
+		}
+		return ctx1;
+	}
+	,makeShader: function(ctx) {
+		var t = ctx.local3d.getScene().find(function(o) {
+			if(((o) instanceof prefab.terrain.TerrainMesh)) {
+				return o;
+			} else {
+				return null;
+			}
+		});
+		if(t != null) {
+			var terrain = t;
+			var s = new prefab.terrain.TerrainBlend();
+			terrain.syncTerrainAlphaBlendShader(s);
+			return s;
+		}
+		return new prefab.terrain.TerrainBlend();
+	}
+	,applyShader: function(obj,material,shader) {
+		hrt.prefab.Shader.prototype.applyShader.call(this,obj,material,shader);
+		var sh = material.getPass("shadow");
+		if(sh != null) {
+			sh.addShader(prefab.TerrainAlphaBlend.terrainBlendShadowPass);
+		}
+	}
+	,syncShaderVars: function(shader,shaderDef) {
+		hrt.prefab.Shader.prototype.syncShaderVars.call(this,shader,shaderDef);
+		var s = shader;
+		s.range__ = this.range;
+		s.constModified = true;
+		s.DEBUG__ = this.DEBUG;
+	}
+	,getHideProps: function() {
+		return { icon : "cog", name : "TerrainAlphaBlend", allowParent : function(p) {
+			if(!(p.to(hrt.prefab.Object2D) != null || p.to(hrt.prefab.Object3D) != null)) {
+				return p.to(hrt.prefab.Material) != null;
+			} else {
+				return true;
+			}
+		}};
+	}
+	,edit: function(ctx) {
+		var _gthis = this;
+		var group = $("\r\n\t\t\t<div class=\"group\" name=\"Terrain Alpha Blend\">\r\n\t\t\t\t<dl>\r\n\t\t\t\t\t<dt>Range</dt><dd><input type=\"range\" min=\"0\" max=\"1\" field=\"range\"/></dd>\r\n\t\t\t\t</dl>\r\n\t\t\t</div>\r\n\t\t\t<div class=\"group\" name=\"Debug\">\r\n\t\t\t\t<dl>\r\n\t\t\t\t\t<dt>Debug</dt><dd><input type=\"checkbox\" field=\"DEBUG\"/></dd>\r\n\t\t\t\t</dl>\r\n\t\t\t</div>\r\n\t\t");
+		var props = ctx.properties.add(group,this,function(pname) {
+			ctx.onChange(_gthis,pname);
+		});
+	}
+	,saveSerializedFields: function(obj) {
+		hrt.prefab.Shader.prototype.saveSerializedFields.call(this,obj);
+		if(this.range != 0.25) {
+			obj.range = this.range;
+		}
+		if(this.discardThreshold != 0.25) {
+			obj.discardThreshold = this.discardThreshold;
+		}
+	}
+	,loadSerializedFields: function(obj) {
+		hrt.prefab.Shader.prototype.loadSerializedFields.call(this,obj);
+		this.range = obj.range == null ? 0.25 : obj.range;
+		this.discardThreshold = obj.discardThreshold == null ? 0.25 : obj.discardThreshold;
+	}
+	,copySerializedFields: function(p) {
+		hrt.prefab.Shader.prototype.copySerializedFields.call(this,p);
+		var p1 = p;
+		this.range = p1.range;
+		this.discardThreshold = p1.discardThreshold;
+	}
+	,__class__: prefab.TerrainAlphaBlend
+});
 prefab.WaterShader = $hxClasses["prefab.WaterShader"] = function() {
 	this.maxDepth__ = 0;
 	this.opacityPower__ = 0;
@@ -416,9 +527,1149 @@ prefab.Water.prototype = $extend(hrt.prefab.terrain.Terrain.prototype,{
 	}
 	,__class__: prefab.Water
 });
+prefab.terrain.Terrain = $hxClasses["prefab.terrain.Terrain"] = function(parent) {
+	hrt.prefab.terrain.Terrain.call(this,parent);
+};
+prefab.terrain.Terrain.__name__ = "prefab.terrain.Terrain";
+prefab.terrain.Terrain.__super__ = hrt.prefab.terrain.Terrain;
+prefab.terrain.Terrain.prototype = $extend(hrt.prefab.terrain.Terrain.prototype,{
+	createTerrain: function(ctx) {
+		var t = new prefab.terrain.TerrainMesh(ctx.local3d);
+		return t;
+	}
+	,loadTiles: function(ctx) {
+		hrt.prefab.terrain.Terrain.prototype.loadTiles.call(this,ctx);
+		var t = this.terrain;
+		t.updateBounds();
+	}
+	,__class__: prefab.terrain.Terrain
+});
+prefab.terrain.TerrainBlend = $hxClasses["prefab.terrain.TerrainBlend"] = function() {
+	this.invScale__ = new h3d.Vector();
+	this.translate__ = new h3d.Vector();
+	this.rotate__ = new h3d.Vector();
+	this.range__ = 0;
+	this.to__ = new h3d.Vector();
+	this.from__ = new h3d.Vector();
+	hxsl.Shader.call(this);
+};
+prefab.terrain.TerrainBlend.__name__ = "prefab.terrain.TerrainBlend";
+prefab.terrain.TerrainBlend._SHADER = null;
+prefab.terrain.TerrainBlend.__super__ = hxsl.Shader;
+prefab.terrain.TerrainBlend.prototype = $extend(hxsl.Shader.prototype,{
+	from__: null
+	,get_from: function() {
+		return this.from__;
+	}
+	,set_from: function(_v) {
+		return this.from__ = _v;
+	}
+	,to__: null
+	,get_to: function() {
+		return this.to__;
+	}
+	,set_to: function(_v) {
+		return this.to__ = _v;
+	}
+	,normalHeightTexture__: null
+	,get_normalHeightTexture: function() {
+		return this.normalHeightTexture__;
+	}
+	,set_normalHeightTexture: function(_v) {
+		return this.normalHeightTexture__ = _v;
+	}
+	,range__: null
+	,get_range: function() {
+		return this.range__;
+	}
+	,set_range: function(_v) {
+		return this.range__ = _v;
+	}
+	,rotate__: null
+	,get_rotate: function() {
+		return this.rotate__;
+	}
+	,set_rotate: function(_v) {
+		return this.rotate__ = _v;
+	}
+	,translate__: null
+	,get_translate: function() {
+		return this.translate__;
+	}
+	,set_translate: function(_v) {
+		return this.translate__ = _v;
+	}
+	,invScale__: null
+	,get_invScale: function() {
+		return this.invScale__;
+	}
+	,set_invScale: function(_v) {
+		return this.invScale__ = _v;
+	}
+	,DEBUG__: null
+	,get_DEBUG: function() {
+		return this.DEBUG__;
+	}
+	,set_DEBUG: function(_v) {
+		this.constModified = true;
+		return this.DEBUG__ = _v;
+	}
+	,updateConstants: function(globals) {
+		this.constBits = 0;
+		if(this.DEBUG__) {
+			this.constBits |= 1;
+		}
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		switch(index) {
+		case 0:
+			return this.from__;
+		case 1:
+			return this.to__;
+		case 2:
+			return this.normalHeightTexture__;
+		case 3:
+			return this.range__;
+		case 4:
+			return this.rotate__;
+		case 5:
+			return this.translate__;
+		case 6:
+			return this.invScale__;
+		case 7:
+			return this.DEBUG__;
+		default:
+		}
+		return null;
+	}
+	,getParamFloatValue: function(index) {
+		if(index == 3) {
+			return this.range__;
+		}
+		return 0.;
+	}
+	,clone: function() {
+		var s = Object.create(prefab.terrain.TerrainBlend.prototype);
+		s.shader = this.shader;
+		s.from__ = this.from__;
+		s.to__ = this.to__;
+		s.normalHeightTexture__ = this.normalHeightTexture__;
+		s.range__ = this.range__;
+		s.rotate__ = this.rotate__;
+		s.translate__ = this.translate__;
+		s.invScale__ = this.invScale__;
+		s.DEBUG__ = this.DEBUG__;
+		return s;
+	}
+	,__class__: prefab.terrain.TerrainBlend
+	,__properties__: {set_DEBUG:"set_DEBUG",get_DEBUG:"get_DEBUG",set_invScale:"set_invScale",get_invScale:"get_invScale",set_translate:"set_translate",get_translate:"get_translate",set_rotate:"set_rotate",get_rotate:"get_rotate",set_range:"set_range",get_range:"get_range",set_normalHeightTexture:"set_normalHeightTexture",get_normalHeightTexture:"get_normalHeightTexture",set_to:"set_to",get_to:"get_to",set_from:"set_from",get_from:"get_from"}
+});
+prefab.terrain.TerrainColorNormalShader = $hxClasses["prefab.terrain.TerrainColorNormalShader"] = function() {
+	this.invScale__ = new h3d.Vector();
+	this.translate__ = new h3d.Vector();
+	this.rotate__ = new h3d.Vector();
+	this.to__ = new h3d.Vector();
+	this.from__ = new h3d.Vector();
+	this.range__ = 0;
+	hxsl.Shader.call(this);
+};
+prefab.terrain.TerrainColorNormalShader.__name__ = "prefab.terrain.TerrainColorNormalShader";
+prefab.terrain.TerrainColorNormalShader._SHADER = null;
+prefab.terrain.TerrainColorNormalShader.__super__ = hxsl.Shader;
+prefab.terrain.TerrainColorNormalShader.prototype = $extend(hxsl.Shader.prototype,{
+	range__: null
+	,get_range: function() {
+		return this.range__;
+	}
+	,set_range: function(_v) {
+		return this.range__ = _v;
+	}
+	,from__: null
+	,get_from: function() {
+		return this.from__;
+	}
+	,set_from: function(_v) {
+		return this.from__ = _v;
+	}
+	,to__: null
+	,get_to: function() {
+		return this.to__;
+	}
+	,set_to: function(_v) {
+		return this.to__ = _v;
+	}
+	,albedoTexture__: null
+	,get_albedoTexture: function() {
+		return this.albedoTexture__;
+	}
+	,set_albedoTexture: function(_v) {
+		return this.albedoTexture__ = _v;
+	}
+	,normalHeightTexture__: null
+	,get_normalHeightTexture: function() {
+		return this.normalHeightTexture__;
+	}
+	,set_normalHeightTexture: function(_v) {
+		return this.normalHeightTexture__ = _v;
+	}
+	,rotate__: null
+	,get_rotate: function() {
+		return this.rotate__;
+	}
+	,set_rotate: function(_v) {
+		return this.rotate__ = _v;
+	}
+	,translate__: null
+	,get_translate: function() {
+		return this.translate__;
+	}
+	,set_translate: function(_v) {
+		return this.translate__ = _v;
+	}
+	,invScale__: null
+	,get_invScale: function() {
+		return this.invScale__;
+	}
+	,set_invScale: function(_v) {
+		return this.invScale__ = _v;
+	}
+	,DEBUG__: null
+	,get_DEBUG: function() {
+		return this.DEBUG__;
+	}
+	,set_DEBUG: function(_v) {
+		this.constModified = true;
+		return this.DEBUG__ = _v;
+	}
+	,updateConstants: function(globals) {
+		this.constBits = 0;
+		if(this.DEBUG__) {
+			this.constBits |= 1;
+		}
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		switch(index) {
+		case 0:
+			return this.range__;
+		case 1:
+			return this.from__;
+		case 2:
+			return this.to__;
+		case 3:
+			return this.albedoTexture__;
+		case 4:
+			return this.normalHeightTexture__;
+		case 5:
+			return this.rotate__;
+		case 6:
+			return this.translate__;
+		case 7:
+			return this.invScale__;
+		case 8:
+			return this.DEBUG__;
+		default:
+		}
+		return null;
+	}
+	,getParamFloatValue: function(index) {
+		if(index == 0) {
+			return this.range__;
+		}
+		return 0.;
+	}
+	,clone: function() {
+		var s = Object.create(prefab.terrain.TerrainColorNormalShader.prototype);
+		s.shader = this.shader;
+		s.range__ = this.range__;
+		s.from__ = this.from__;
+		s.to__ = this.to__;
+		s.albedoTexture__ = this.albedoTexture__;
+		s.normalHeightTexture__ = this.normalHeightTexture__;
+		s.rotate__ = this.rotate__;
+		s.translate__ = this.translate__;
+		s.invScale__ = this.invScale__;
+		s.DEBUG__ = this.DEBUG__;
+		return s;
+	}
+	,__class__: prefab.terrain.TerrainColorNormalShader
+	,__properties__: {set_DEBUG:"set_DEBUG",get_DEBUG:"get_DEBUG",set_invScale:"set_invScale",get_invScale:"get_invScale",set_translate:"set_translate",get_translate:"get_translate",set_rotate:"set_rotate",get_rotate:"get_rotate",set_normalHeightTexture:"set_normalHeightTexture",get_normalHeightTexture:"get_normalHeightTexture",set_albedoTexture:"set_albedoTexture",get_albedoTexture:"get_albedoTexture",set_to:"set_to",get_to:"get_to",set_from:"set_from",get_from:"get_from",set_range:"set_range",get_range:"get_range"}
+});
+if(!prefab.terrain._TerrainMesh) prefab.terrain._TerrainMesh = {};
+prefab.terrain._TerrainMesh.TerrainBakeShader = $hxClasses["prefab.terrain._TerrainMesh.TerrainBakeShader"] = function() {
+	this.to__ = new h3d.Vector();
+	this.from__ = new h3d.Vector();
+	this.blendSharpness__ = 0;
+	this.heightBlendStrength__ = 0;
+	this.tileSize__ = new h3d.Vector();
+	this.tilePos__ = new h3d.Vector();
+	this.secondSurfaceParams__ = [];
+	this.surfaceParams__ = [];
+	this.SURFACE_COUNT__ = 0;
+	h3d.shader.ScreenShader.call(this);
+};
+prefab.terrain._TerrainMesh.TerrainBakeShader.__name__ = "prefab.terrain._TerrainMesh.TerrainBakeShader";
+prefab.terrain._TerrainMesh.TerrainBakeShader._SHADER = null;
+prefab.terrain._TerrainMesh.TerrainBakeShader.__super__ = h3d.shader.ScreenShader;
+prefab.terrain._TerrainMesh.TerrainBakeShader.prototype = $extend(h3d.shader.ScreenShader.prototype,{
+	SURFACE_COUNT__: null
+	,get_SURFACE_COUNT: function() {
+		return this.SURFACE_COUNT__;
+	}
+	,set_SURFACE_COUNT: function(_v) {
+		this.constModified = true;
+		return this.SURFACE_COUNT__ = _v;
+	}
+	,albedoTextures__: null
+	,get_albedoTextures: function() {
+		return this.albedoTextures__;
+	}
+	,set_albedoTextures: function(_v) {
+		return this.albedoTextures__ = _v;
+	}
+	,normalTextures__: null
+	,get_normalTextures: function() {
+		return this.normalTextures__;
+	}
+	,set_normalTextures: function(_v) {
+		return this.normalTextures__ = _v;
+	}
+	,pbrTextures__: null
+	,get_pbrTextures: function() {
+		return this.pbrTextures__;
+	}
+	,set_pbrTextures: function(_v) {
+		return this.pbrTextures__ = _v;
+	}
+	,weightTextures__: null
+	,get_weightTextures: function() {
+		return this.weightTextures__;
+	}
+	,set_weightTextures: function(_v) {
+		return this.weightTextures__ = _v;
+	}
+	,surfaceIndexMap__: null
+	,get_surfaceIndexMap: function() {
+		return this.surfaceIndexMap__;
+	}
+	,set_surfaceIndexMap: function(_v) {
+		return this.surfaceIndexMap__ = _v;
+	}
+	,surfaceParams__: null
+	,get_surfaceParams: function() {
+		return this.surfaceParams__;
+	}
+	,set_surfaceParams: function(_v) {
+		return this.surfaceParams__ = _v;
+	}
+	,secondSurfaceParams__: null
+	,get_secondSurfaceParams: function() {
+		return this.secondSurfaceParams__;
+	}
+	,set_secondSurfaceParams: function(_v) {
+		return this.secondSurfaceParams__ = _v;
+	}
+	,tilePos__: null
+	,get_tilePos: function() {
+		return this.tilePos__;
+	}
+	,set_tilePos: function(_v) {
+		return this.tilePos__ = _v;
+	}
+	,tileSize__: null
+	,get_tileSize: function() {
+		return this.tileSize__;
+	}
+	,set_tileSize: function(_v) {
+		return this.tileSize__ = _v;
+	}
+	,sourceHeight__: null
+	,get_sourceHeight: function() {
+		return this.sourceHeight__;
+	}
+	,set_sourceHeight: function(_v) {
+		return this.sourceHeight__ = _v;
+	}
+	,sourceNormal__: null
+	,get_sourceNormal: function() {
+		return this.sourceNormal__;
+	}
+	,set_sourceNormal: function(_v) {
+		return this.sourceNormal__ = _v;
+	}
+	,heightBlendStrength__: null
+	,get_heightBlendStrength: function() {
+		return this.heightBlendStrength__;
+	}
+	,set_heightBlendStrength: function(_v) {
+		return this.heightBlendStrength__ = _v;
+	}
+	,blendSharpness__: null
+	,get_blendSharpness: function() {
+		return this.blendSharpness__;
+	}
+	,set_blendSharpness: function(_v) {
+		return this.blendSharpness__ = _v;
+	}
+	,source__: null
+	,get_source: function() {
+		return this.source__;
+	}
+	,set_source: function(_v) {
+		return this.source__ = _v;
+	}
+	,from__: null
+	,get_from: function() {
+		return this.from__;
+	}
+	,set_from: function(_v) {
+		return this.from__ = _v;
+	}
+	,to__: null
+	,get_to: function() {
+		return this.to__;
+	}
+	,set_to: function(_v) {
+		return this.to__ = _v;
+	}
+	,updateConstants: function(globals) {
+		this.constBits = 0;
+		var v = this.SURFACE_COUNT__;
+		if(v >>> 8 != 0) {
+			throw haxe.Exception.thrown("SURFACE_COUNT" + " is out of range " + v + ">" + 255);
+		}
+		this.constBits |= v;
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		switch(index) {
+		case 0:
+			return this.flipY__;
+		case 1:
+			return this.SURFACE_COUNT__;
+		case 2:
+			return this.albedoTextures__;
+		case 3:
+			return this.normalTextures__;
+		case 4:
+			return this.pbrTextures__;
+		case 5:
+			return this.weightTextures__;
+		case 6:
+			return this.surfaceIndexMap__;
+		case 7:
+			return this.surfaceParams__;
+		case 8:
+			return this.secondSurfaceParams__;
+		case 9:
+			return this.tilePos__;
+		case 10:
+			return this.tileSize__;
+		case 11:
+			return this.sourceHeight__;
+		case 12:
+			return this.sourceNormal__;
+		case 13:
+			return this.heightBlendStrength__;
+		case 14:
+			return this.blendSharpness__;
+		case 15:
+			return this.source__;
+		case 16:
+			return this.from__;
+		case 17:
+			return this.to__;
+		default:
+		}
+		return null;
+	}
+	,getParamFloatValue: function(index) {
+		switch(index) {
+		case 0:
+			return this.flipY__;
+		case 13:
+			return this.heightBlendStrength__;
+		case 14:
+			return this.blendSharpness__;
+		default:
+		}
+		return 0.;
+	}
+	,clone: function() {
+		var s = Object.create(prefab.terrain._TerrainMesh.TerrainBakeShader.prototype);
+		s.shader = this.shader;
+		s.flipY__ = this.flipY__;
+		s.SURFACE_COUNT__ = this.SURFACE_COUNT__;
+		s.albedoTextures__ = this.albedoTextures__;
+		s.normalTextures__ = this.normalTextures__;
+		s.pbrTextures__ = this.pbrTextures__;
+		s.weightTextures__ = this.weightTextures__;
+		s.surfaceIndexMap__ = this.surfaceIndexMap__;
+		s.surfaceParams__ = this.surfaceParams__;
+		s.secondSurfaceParams__ = this.secondSurfaceParams__;
+		s.tilePos__ = this.tilePos__;
+		s.tileSize__ = this.tileSize__;
+		s.sourceHeight__ = this.sourceHeight__;
+		s.sourceNormal__ = this.sourceNormal__;
+		s.heightBlendStrength__ = this.heightBlendStrength__;
+		s.blendSharpness__ = this.blendSharpness__;
+		s.source__ = this.source__;
+		s.from__ = this.from__;
+		s.to__ = this.to__;
+		return s;
+	}
+	,__class__: prefab.terrain._TerrainMesh.TerrainBakeShader
+	,__properties__: $extend(h3d.shader.ScreenShader.prototype.__properties__,{set_to:"set_to",get_to:"get_to",set_from:"set_from",get_from:"get_from",set_source:"set_source",get_source:"get_source",set_blendSharpness:"set_blendSharpness",get_blendSharpness:"get_blendSharpness",set_heightBlendStrength:"set_heightBlendStrength",get_heightBlendStrength:"get_heightBlendStrength",set_sourceNormal:"set_sourceNormal",get_sourceNormal:"get_sourceNormal",set_sourceHeight:"set_sourceHeight",get_sourceHeight:"get_sourceHeight",set_tileSize:"set_tileSize",get_tileSize:"get_tileSize",set_tilePos:"set_tilePos",get_tilePos:"get_tilePos",set_secondSurfaceParams:"set_secondSurfaceParams",get_secondSurfaceParams:"get_secondSurfaceParams",set_surfaceParams:"set_surfaceParams",get_surfaceParams:"get_surfaceParams",set_surfaceIndexMap:"set_surfaceIndexMap",get_surfaceIndexMap:"get_surfaceIndexMap",set_weightTextures:"set_weightTextures",get_weightTextures:"get_weightTextures",set_pbrTextures:"set_pbrTextures",get_pbrTextures:"get_pbrTextures",set_normalTextures:"set_normalTextures",get_normalTextures:"get_normalTextures",set_albedoTextures:"set_albedoTextures",get_albedoTextures:"get_albedoTextures",set_SURFACE_COUNT:"set_SURFACE_COUNT",get_SURFACE_COUNT:"get_SURFACE_COUNT"})
+});
+prefab.terrain._TerrainMesh.CopyHeightNormalShader = $hxClasses["prefab.terrain._TerrainMesh.CopyHeightNormalShader"] = function() {
+	this.to__ = new h3d.Vector();
+	this.from__ = new h3d.Vector();
+	this.sourceHeightSize__ = new h3d.Vector();
+	h3d.shader.ScreenShader.call(this);
+};
+prefab.terrain._TerrainMesh.CopyHeightNormalShader.__name__ = "prefab.terrain._TerrainMesh.CopyHeightNormalShader";
+prefab.terrain._TerrainMesh.CopyHeightNormalShader._SHADER = null;
+prefab.terrain._TerrainMesh.CopyHeightNormalShader.__super__ = h3d.shader.ScreenShader;
+prefab.terrain._TerrainMesh.CopyHeightNormalShader.prototype = $extend(h3d.shader.ScreenShader.prototype,{
+	sourceHeight__: null
+	,get_sourceHeight: function() {
+		return this.sourceHeight__;
+	}
+	,set_sourceHeight: function(_v) {
+		return this.sourceHeight__ = _v;
+	}
+	,sourceHeightSize__: null
+	,get_sourceHeightSize: function() {
+		return this.sourceHeightSize__;
+	}
+	,set_sourceHeightSize: function(_v) {
+		return this.sourceHeightSize__ = _v;
+	}
+	,sourceNormal__: null
+	,get_sourceNormal: function() {
+		return this.sourceNormal__;
+	}
+	,set_sourceNormal: function(_v) {
+		return this.sourceNormal__ = _v;
+	}
+	,from__: null
+	,get_from: function() {
+		return this.from__;
+	}
+	,set_from: function(_v) {
+		return this.from__ = _v;
+	}
+	,to__: null
+	,get_to: function() {
+		return this.to__;
+	}
+	,set_to: function(_v) {
+		return this.to__ = _v;
+	}
+	,updateConstants: function(globals) {
+		this.constBits = 0;
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		switch(index) {
+		case 0:
+			return this.flipY__;
+		case 1:
+			return this.sourceHeight__;
+		case 2:
+			return this.sourceHeightSize__;
+		case 3:
+			return this.sourceNormal__;
+		case 4:
+			return this.from__;
+		case 5:
+			return this.to__;
+		default:
+		}
+		return null;
+	}
+	,getParamFloatValue: function(index) {
+		if(index == 0) {
+			return this.flipY__;
+		}
+		return 0.;
+	}
+	,clone: function() {
+		var s = Object.create(prefab.terrain._TerrainMesh.CopyHeightNormalShader.prototype);
+		s.shader = this.shader;
+		s.flipY__ = this.flipY__;
+		s.sourceHeight__ = this.sourceHeight__;
+		s.sourceHeightSize__ = this.sourceHeightSize__;
+		s.sourceNormal__ = this.sourceNormal__;
+		s.from__ = this.from__;
+		s.to__ = this.to__;
+		return s;
+	}
+	,__class__: prefab.terrain._TerrainMesh.CopyHeightNormalShader
+	,__properties__: $extend(h3d.shader.ScreenShader.prototype.__properties__,{set_to:"set_to",get_to:"get_to",set_from:"set_from",get_from:"get_from",set_sourceNormal:"set_sourceNormal",get_sourceNormal:"get_sourceNormal",set_sourceHeightSize:"set_sourceHeightSize",get_sourceHeightSize:"get_sourceHeightSize",set_sourceHeight:"set_sourceHeight",get_sourceHeight:"get_sourceHeight"})
+});
+prefab.terrain.TerrainMesh = $hxClasses["prefab.terrain.TerrainMesh"] = function(parent) {
+	this.terrainBlendShaders = [];
+	this.terrainColorShaders = [];
+	this.fromTo = new h3d.Vector();
+	this.pixelPerUnit = 4;
+	hrt.prefab.terrain.TerrainMesh.call(this,parent);
+};
+prefab.terrain.TerrainMesh.__name__ = "prefab.terrain.TerrainMesh";
+prefab.terrain.TerrainMesh.__super__ = hrt.prefab.terrain.TerrainMesh;
+prefab.terrain.TerrainMesh.prototype = $extend(hrt.prefab.terrain.TerrainMesh.prototype,{
+	pixelPerUnit: null
+	,albedoTexture: null
+	,normalHeightTexture: null
+	,fromTo: null
+	,terrainColorShaders: null
+	,terrainBlendShaders: null
+	,onRemove: function() {
+		hrt.prefab.terrain.TerrainMesh.prototype.onRemove.call(this);
+		if(this.normalHeightTexture != null) {
+			this.normalHeightTexture.dispose();
+		}
+		this.normalHeightTexture = null;
+		if(this.albedoTexture != null) {
+			this.albedoTexture.dispose();
+		}
+		this.albedoTexture = null;
+	}
+	,getAlbedoTexture: function() {
+		if(this.albedoTexture == null) {
+			this.bake();
+		}
+		return this.albedoTexture;
+	}
+	,getNormalHeightTexture: function() {
+		if(this.normalHeightTexture == null) {
+			this.bake();
+		}
+		return this.normalHeightTexture;
+	}
+	,updateBounds: function() {
+		var minX = 0.0;
+		var maxX = 0.0;
+		var minY = 0.0;
+		var maxY = 0.0;
+		var _g = 0;
+		var _g1 = this.tiles;
+		while(_g < _g1.length) {
+			var t = _g1[_g];
+			++_g;
+			var b = t.tileX;
+			if(minX > b) {
+				minX = b;
+			}
+			var b1 = t.tileX + 1;
+			if(maxX < b1) {
+				maxX = b1;
+			}
+			var b2 = t.tileY;
+			if(minY > b2) {
+				minY = b2;
+			}
+			var b3 = t.tileY + 1;
+			if(maxY < b3) {
+				maxY = b3;
+			}
+		}
+		minX *= this.tileSize.x;
+		maxX *= this.tileSize.y;
+		minY *= this.tileSize.x;
+		maxY *= this.tileSize.y;
+		var _this = this.getAbsPos();
+		var v = null;
+		if(v == null) {
+			v = new h3d.Vector();
+		}
+		var x = _this._41;
+		var y = _this._42;
+		var z = _this._43;
+		var w = _this._44;
+		if(w == null) {
+			w = 1.;
+		}
+		if(z == null) {
+			z = 0.;
+		}
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		v.x = x;
+		v.y = y;
+		v.z = z;
+		v.w = w;
+		var pos = v;
+		var _this = this.fromTo;
+		var x = minX;
+		var y = minY;
+		var z = maxX;
+		var w = maxY;
+		if(w == null) {
+			w = 1.;
+		}
+		if(z == null) {
+			z = 0.;
+		}
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		_this.x = x;
+		_this.y = y;
+		_this.z = z;
+		_this.w = w;
+	}
+	,sync: function(ctx) {
+		hrt.prefab.terrain.TerrainMesh.prototype.sync.call(this,ctx);
+		this.updateBounds();
+		var angle = -this.getRotationQuat().toMatrix().getEulerAngles().z;
+		if(this.parent != null) {
+			angle -= this.parent.getRotationQuat().toMatrix().getEulerAngles().z;
+		}
+		var cos = Math.cos(angle);
+		var sin = Math.sin(angle);
+		var _g = 0;
+		var _g1 = this.terrainColorShaders;
+		while(_g < _g1.length) {
+			var s = _g1[_g];
+			++_g;
+			s.normalHeightTexture__ = this.getNormalHeightTexture();
+			s.albedoTexture__ = this.getAlbedoTexture();
+			var _this = s.from__;
+			var x = this.fromTo.x;
+			var y = this.fromTo.y;
+			if(y == null) {
+				y = 0.;
+			}
+			if(x == null) {
+				x = 0.;
+			}
+			_this.x = x;
+			_this.y = y;
+			_this.z = 0.;
+			_this.w = 1.;
+			var _this1 = s.to__;
+			var x1 = this.fromTo.z;
+			var y1 = this.fromTo.w;
+			if(y1 == null) {
+				y1 = 0.;
+			}
+			if(x1 == null) {
+				x1 = 0.;
+			}
+			_this1.x = x1;
+			_this1.y = y1;
+			_this1.z = 0.;
+			_this1.w = 1.;
+			var _this2 = s.rotate__;
+			var x2 = cos;
+			var y2 = sin;
+			if(y2 == null) {
+				y2 = 0.;
+			}
+			if(x2 == null) {
+				x2 = 0.;
+			}
+			_this2.x = x2;
+			_this2.y = y2;
+			_this2.z = 0.;
+			_this2.w = 1.;
+			var _this3 = s.translate__;
+			var _this4 = this.getAbsPos();
+			var v = null;
+			if(v == null) {
+				v = new h3d.Vector();
+			}
+			var x3 = _this4._41;
+			var y3 = _this4._42;
+			var z = _this4._43;
+			var w = _this4._44;
+			if(w == null) {
+				w = 1.;
+			}
+			if(z == null) {
+				z = 0.;
+			}
+			if(y3 == null) {
+				y3 = 0.;
+			}
+			if(x3 == null) {
+				x3 = 0.;
+			}
+			v.x = x3;
+			v.y = y3;
+			v.z = z;
+			v.w = w;
+			var x4 = -v.x;
+			var _this5 = this.getAbsPos();
+			var v1 = null;
+			if(v1 == null) {
+				v1 = new h3d.Vector();
+			}
+			var x5 = _this5._41;
+			var y4 = _this5._42;
+			var z1 = _this5._43;
+			var w1 = _this5._44;
+			if(w1 == null) {
+				w1 = 1.;
+			}
+			if(z1 == null) {
+				z1 = 0.;
+			}
+			if(y4 == null) {
+				y4 = 0.;
+			}
+			if(x5 == null) {
+				x5 = 0.;
+			}
+			v1.x = x5;
+			v1.y = y4;
+			v1.z = z1;
+			v1.w = w1;
+			var y5 = -v1.y;
+			if(y5 == null) {
+				y5 = 0.;
+			}
+			if(x4 == null) {
+				x4 = 0.;
+			}
+			_this3.x = x4;
+			_this3.y = y5;
+			_this3.z = 0.;
+			_this3.w = 1.;
+			var _this6 = s.invScale__;
+			var x6 = 1. / this.scaleX;
+			var y6 = 1. / this.scaleY;
+			if(y6 == null) {
+				y6 = 0.;
+			}
+			if(x6 == null) {
+				x6 = 0.;
+			}
+			_this6.x = x6;
+			_this6.y = y6;
+			_this6.z = 0.;
+			_this6.w = 1.;
+		}
+		var _g = 0;
+		var _g1 = this.terrainBlendShaders;
+		while(_g < _g1.length) {
+			var s = _g1[_g];
+			++_g;
+			s.normalHeightTexture__ = this.getNormalHeightTexture();
+			var _this = s.from__;
+			var x = this.fromTo.x;
+			var y = this.fromTo.y;
+			if(y == null) {
+				y = 0.;
+			}
+			if(x == null) {
+				x = 0.;
+			}
+			_this.x = x;
+			_this.y = y;
+			_this.z = 0.;
+			_this.w = 1.;
+			var _this1 = s.to__;
+			var x1 = this.fromTo.z;
+			var y1 = this.fromTo.w;
+			if(y1 == null) {
+				y1 = 0.;
+			}
+			if(x1 == null) {
+				x1 = 0.;
+			}
+			_this1.x = x1;
+			_this1.y = y1;
+			_this1.z = 0.;
+			_this1.w = 1.;
+			var _this2 = s.rotate__;
+			var x2 = cos;
+			var y2 = sin;
+			if(y2 == null) {
+				y2 = 0.;
+			}
+			if(x2 == null) {
+				x2 = 0.;
+			}
+			_this2.x = x2;
+			_this2.y = y2;
+			_this2.z = 0.;
+			_this2.w = 1.;
+			var _this3 = s.translate__;
+			var _this4 = this.getAbsPos();
+			var v = null;
+			if(v == null) {
+				v = new h3d.Vector();
+			}
+			var x3 = _this4._41;
+			var y3 = _this4._42;
+			var z = _this4._43;
+			var w = _this4._44;
+			if(w == null) {
+				w = 1.;
+			}
+			if(z == null) {
+				z = 0.;
+			}
+			if(y3 == null) {
+				y3 = 0.;
+			}
+			if(x3 == null) {
+				x3 = 0.;
+			}
+			v.x = x3;
+			v.y = y3;
+			v.z = z;
+			v.w = w;
+			var x4 = -v.x;
+			var _this5 = this.getAbsPos();
+			var v1 = null;
+			if(v1 == null) {
+				v1 = new h3d.Vector();
+			}
+			var x5 = _this5._41;
+			var y4 = _this5._42;
+			var z1 = _this5._43;
+			var w1 = _this5._44;
+			if(w1 == null) {
+				w1 = 1.;
+			}
+			if(z1 == null) {
+				z1 = 0.;
+			}
+			if(y4 == null) {
+				y4 = 0.;
+			}
+			if(x5 == null) {
+				x5 = 0.;
+			}
+			v1.x = x5;
+			v1.y = y4;
+			v1.z = z1;
+			v1.w = w1;
+			var y5 = -v1.y;
+			if(y5 == null) {
+				y5 = 0.;
+			}
+			if(x4 == null) {
+				x4 = 0.;
+			}
+			_this3.x = x4;
+			_this3.y = y5;
+			_this3.z = 0.;
+			_this3.w = 1.;
+			var _this6 = s.invScale__;
+			var x6 = 1. / this.scaleX;
+			var y6 = 1. / this.scaleY;
+			if(y6 == null) {
+				y6 = 0.;
+			}
+			if(x6 == null) {
+				x6 = 0.;
+			}
+			_this6.x = x6;
+			_this6.y = y6;
+			_this6.z = 0.;
+			_this6.w = 1.;
+		}
+	}
+	,syncTerrainColorShader: function(s) {
+		this.terrainColorShaders.push(s);
+	}
+	,syncTerrainAlphaBlendShader: function(s) {
+		this.terrainBlendShaders.push(s);
+	}
+	,bake: function() {
+		if(this.albedoTexture != null) {
+			this.albedoTexture.dispose();
+		}
+		if(this.normalHeightTexture != null) {
+			this.albedoTexture.dispose();
+		}
+		var terrainBounds_x = 0.;
+		var terrainBounds_y = 0.;
+		var terrainBounds_z = 0.;
+		var terrainBounds_w = 1.;
+		var _g = 0;
+		var _g1 = this.tiles;
+		while(_g < _g1.length) {
+			var t = _g1[_g];
+			++_g;
+			var a = terrainBounds_x;
+			var b = t.tileX;
+			terrainBounds_x = a > b ? b : a;
+			var a1 = terrainBounds_y;
+			var b1 = t.tileX + 1;
+			terrainBounds_y = a1 < b1 ? b1 : a1;
+			var a2 = terrainBounds_z;
+			var b2 = t.tileY;
+			terrainBounds_z = a2 > b2 ? b2 : a2;
+			var a3 = terrainBounds_w;
+			var b3 = t.tileY + 1;
+			terrainBounds_w = a3 < b3 ? b3 : a3;
+		}
+		var f = terrainBounds_x;
+		var f1 = terrainBounds_y;
+		var terrainWidth = (f < 0 ? -f : f) + (f1 < 0 ? -f1 : f1) | 0;
+		var f = terrainBounds_z;
+		var f1 = terrainBounds_w;
+		var terrainHeight = (f < 0 ? -f : f) + (f1 < 0 ? -f1 : f1) | 0;
+		var colorMapWidth = terrainWidth * this.tileSize.x * this.pixelPerUnit | 0;
+		var colorMapHeight = terrainHeight * this.tileSize.y * this.pixelPerUnit | 0;
+		this.albedoTexture = new h3d.mat.Texture(colorMapWidth,colorMapHeight,[h3d.mat.TextureFlags.Target]);
+		var engine = h3d.Engine.CURRENT;
+		var output = [hxsl.Output.Value("albedoOutput")];
+		var ss = new h3d.pass.ScreenFx(new prefab.terrain._TerrainMesh.TerrainBakeShader(),output);
+		var _this = ss.shader;
+		_this.constModified = true;
+		_this.SURFACE_COUNT__ = this.surfaceArray.surfaceCount;
+		ss.shader.surfaceParams__ = this.surfaceArray.params;
+		ss.shader.secondSurfaceParams__ = this.surfaceArray.secondParams;
+		ss.shader.albedoTextures__ = this.surfaceArray.albedo;
+		ss.shader.normalTextures__ = this.surfaceArray.normal;
+		ss.shader.pbrTextures__ = this.surfaceArray.pbr;
+		var _this = ss.shader.tileSize__;
+		var x = this.tileSize.x;
+		var y = this.tileSize.y;
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		_this.x = x;
+		_this.y = y;
+		_this.z = 0.;
+		_this.w = 1.;
+		ss.shader.heightBlendStrength__ = this.heightBlendStrength;
+		ss.shader.blendSharpness__ = this.blendSharpness;
+		engine.pushTargets([this.albedoTexture]);
+		var _g = 0;
+		var _g1 = this.tiles;
+		while(_g < _g1.length) {
+			var t = _g1[_g];
+			++_g;
+			ss.shader.surfaceIndexMap__ = t.surfaceIndexMap;
+			ss.shader.weightTextures__ = t.surfaceWeightArray;
+			ss.shader.sourceHeight__ = t.heightMap;
+			ss.shader.sourceNormal__ = t.normalMap;
+			var _this = ss.shader.from__;
+			var x = (t.tileX - terrainBounds_x) * (this.tileSize.x * this.pixelPerUnit) / colorMapWidth;
+			var y = (t.tileY - terrainBounds_z) * (this.tileSize.y * this.pixelPerUnit) / colorMapHeight;
+			if(y == null) {
+				y = 0.;
+			}
+			if(x == null) {
+				x = 0.;
+			}
+			_this.x = x;
+			_this.y = y;
+			_this.z = 0.;
+			_this.w = 1.;
+			var _this1 = ss.shader.to__;
+			var x1 = ss.shader.from__.x + this.tileSize.x * this.pixelPerUnit / colorMapWidth;
+			var y1 = ss.shader.from__.y + this.tileSize.y * this.pixelPerUnit / colorMapHeight;
+			if(y1 == null) {
+				y1 = 0.;
+			}
+			if(x1 == null) {
+				x1 = 0.;
+			}
+			_this1.x = x1;
+			_this1.y = y1;
+			_this1.z = 0.;
+			_this1.w = 1.;
+			ss.render();
+		}
+		engine.popTarget();
+		var ratio = 1.0;
+		var heightMapWidth = terrainWidth * this.heightMapResolution.x * ratio | 0;
+		var heightMapHeight = terrainHeight * this.heightMapResolution.y * ratio | 0;
+		var x = this.heightMapResolution.x * ratio;
+		var y = this.heightMapResolution.y * ratio;
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		var heightTileSize_x = x;
+		var heightTileSize_y = y;
+		this.normalHeightTexture = new h3d.mat.Texture(heightMapWidth,heightMapHeight,[h3d.mat.TextureFlags.Target],hxd.PixelFormat.RGBA32F);
+		var ss = new h3d.pass.ScreenFx(new prefab.terrain._TerrainMesh.CopyHeightNormalShader());
+		engine.pushTarget(this.normalHeightTexture);
+		var _g = 0;
+		var _g1 = this.tiles;
+		while(_g < _g1.length) {
+			var t = _g1[_g];
+			++_g;
+			ss.shader.sourceHeight__ = t.heightMap;
+			var _this = ss.shader.sourceHeightSize__;
+			var x = t.heightMap.width;
+			var y = t.heightMap.height;
+			if(y == null) {
+				y = 0.;
+			}
+			if(x == null) {
+				x = 0.;
+			}
+			_this.x = x;
+			_this.y = y;
+			_this.z = 0.;
+			_this.w = 1.;
+			ss.shader.sourceNormal__ = t.normalMap;
+			var _this1 = ss.shader.from__;
+			var x1 = (t.tileX - terrainBounds_x) * heightTileSize_x / heightMapWidth;
+			var y1 = (t.tileY - terrainBounds_z) * heightTileSize_y / heightMapHeight;
+			if(y1 == null) {
+				y1 = 0.;
+			}
+			if(x1 == null) {
+				x1 = 0.;
+			}
+			_this1.x = x1;
+			_this1.y = y1;
+			_this1.z = 0.;
+			_this1.w = 1.;
+			var _this2 = ss.shader.to__;
+			var x2 = ss.shader.from__.x + heightTileSize_x / heightMapWidth;
+			var y2 = ss.shader.from__.y + heightTileSize_y / heightMapHeight;
+			if(y2 == null) {
+				y2 = 0.;
+			}
+			if(x2 == null) {
+				x2 = 0.;
+			}
+			_this2.x = x2;
+			_this2.y = y2;
+			_this2.z = 0.;
+			_this2.w = 1.;
+			ss.render();
+		}
+		engine.popTarget();
+	}
+	,__class__: prefab.terrain.TerrainMesh
+});
 $hxClasses["Math"] = Math;
 if( String.fromCodePoint == null ) String.fromCodePoint = function(c) { return c < 0x10000 ? String.fromCharCode(c) : String.fromCharCode((c>>10)+0xD7C0)+String.fromCharCode((c&0x3FF)+0xDC00); }
+prefab.terrain.TerrainBlendShadowPass.SRC = "HXSLJXByZWZhYi50ZXJyYWluLlRlcnJhaW5CbGVuZFNoYWRvd1Bhc3MCAQpzaGFkb3dQYXNzAgQAAAIIZnJhZ21lbnQOBgAAAQECAAAFAQYEAgECAQEBAgIA";
+prefab.TerrainAlphaBlend.terrainBlendShadowPass = new prefab.terrain.TerrainBlendShadowPass();
+prefab.TerrainAlphaBlend._ = hrt.prefab.Library.register("terrainAlphaBlend",prefab.TerrainAlphaBlend);
 prefab.WaterShader.SRC = "HXSLEnByZWZhYi5XYXRlclNoYWRlchUBBWlucHV0DQEBAghwb3NpdGlvbgULAQEAAQAAAwZnbG9iYWwNAgIEBHRpbWUDAAMABQltb2RlbFZpZXcHAAMBAwAAAAYGb3V0cHV0DQMBBwhwb3NpdGlvbgUMBAYABAAACAZjYW1lcmENBAIJD2ludmVyc2VWaWV3UHJvagcACAAKD2ludmVyc2VWaWV3UHJvagcACAAAAAALCGRlcHRoTWFwEQEAAAAMDm5lYXJXYXRlckNvbG9yBQsCAAANEG1pZGRsZVdhdGVyQ29sb3IFCwIAAA4OZGVlcFdhdGVyQ29sb3IFCwIAAA8Jcm91Z2huZXNzAwIAABAMb3BhY2l0eVBvd2VyAwIAABEIbWF4RGVwdGgDAgAAEhByZWxhdGl2ZVBvc2l0aW9uBQsEAAATEXByb2plY3RlZFBvc2l0aW9uBQwEAAAUDnRhbmdlbnRWaWV3UG9zBQsEAAAVDnRhbmdlbnRGcmFnUG9zBQsEAAAWE3RyYW5zZm9ybWVkUG9zaXRpb24FCwQAABcRdHJhbnNmb3JtZWROb3JtYWwFCwQAABgNdGVycmFpbk5vcm1hbAULBAAAGQpwaXhlbENvbG9yBQwEAAAaBnZlcnRleA4GAAAbCGZyYWdtZW50DgYAAAIAGgAABQIGBAIXBQsJAykOAwEDAAAAAAAA8D8DAQMAAAAAAAAAAAMBAwAAAAAAAAAAAwULBQsGgAoCFgULkgAFCwkDKQ4DAQMAAAAAAAAAAAMBAwAAAAAAAAAAAwYBAQOamZmZmZnJPwMJAwIOAQYACgIWBQsAAAMCBAMDAwMFCwULAAEbAAAFDggcCXNjcmVlblBvcwUKBAAABgIKAhMFDBEABQoKAhMFDAwAAwUKAAgdBWRlcHRoAwQAAAkDPw4CAgsRAQkDOg4BAhwFCgUKAwAIHgNydXYFDAQAAAkDKg4DAhwFCgIdAwEDAAAAAAAA8D8DBQwACB8EcHBvcwUMBAAABgECHgUMAgkHBQwACCAEd3BvcwULBAAABgIKAh8FDJIABQsKAh8FDAwAAwULAAghCndhdGVyRGVwdGgDBAAACQMcDgIKAiAFC5IABQsCFgULAwAIIgJwMAMEAAABAwAAAAAAAAAAAwAIIwJwMQMEAAABAzMzMzMzM+M/AwAIJAJwMgMEAAABAwAAAAAAAPA/AwAIJQF0AwQAAAkDNQ4BBgMBAwAAAAAAAPA/AwYCAiEDAhEDAwMDAAgmCndhdGVyQ29sb3IFCwQAAAkDGA4DAg4FCwkDGA4DAg0FCwIMBQsJAxoOAwIjAwIkAwIlAwMFCwkDGg4DAiIDAiMDAiUDAwULAAgnB29wYWNpdHkDBAAACQMYDgMBA5qZmZmZmck/AwEDAAAAAAAA8D8DCQMIDgIGAwEDAAAAAAAA8D8DAiUDAwIQAwMDAAYECgIZBQyTAwUMCQMqDgICJgULAicDBQwFDAYEAhcFCwkDKQ4DAQMAAAAAAADwPwMBAwAAAAAAAAAAAwEDAAAAAAAAAAADBQsFCwA";
 prefab.Water._ = hrt.prefab.Library.register("water",prefab.Water);
+prefab.terrain.Terrain._ = hrt.prefab.Library.register("terrain",prefab.terrain.Terrain);
+prefab.terrain.TerrainBlend.SRC = "HXSLG3ByZWZhYi50ZXJyYWluLlRlcnJhaW5CbGVuZBEBBGZyb20FCgIAAAICdG8FCgIAAAMTbm9ybWFsSGVpZ2h0VGV4dHVyZQoCAAAEBXJhbmdlAwIAAAUGcm90YXRlBQoCAAAGCXRyYW5zbGF0ZQUKAgAABwhpbnZTY2FsZQUKAgAACAVERUJVRwICAAEAAAAAAAkKc2hhZG93UGFzcwIEAAAKE3RyYW5zZm9ybWVkUG9zaXRpb24FCwQAAAsRdHJhbnNmb3JtZWROb3JtYWwFCwQAAAwQcmVsYXRpdmVQb3NpdGlvbgULBAAADQpwaXhlbENvbG9yBQwEAAAODXRlcnJhaW5IZWlnaHQDBAAADw10ZXJyYWluTm9ybWFsBQsEAAAQEF9faW5pdF9fZnJhZ21lbnQOBgAAEQhmcmFnbWVudA4GAAACAhAAAAUBBQEGBAIJAgEBAAICAAABEQAABQoIEglyb3RhdGVQb3MFCgQAAAYACgIKBQsRAAUKAgYFCgUKAAYEAhIFCgkDKA4CBgMGAQoCEgUKAAADCgIFBQoAAAMDBgEKAhIFCgQAAwoCBQUKBAADAwMGAAYBCgISBQoAAAMKAgUFCgQAAwMGAQoCEgUKBAADCgIFBQoAAAMDAwUKBQoGgQISBQoCBwUKBQoIEwl0ZXJyYWluVVYFCgQAAAYCBAYDAhIFCgIBBQoFCgUKBAYACQMPDgECAgUKBQoJAw8OAQIBBQoFCgUKBQoFCgAIFBN0ZXJyYWluSGVpZ2h0Tm9ybWFsBQwEAAAKCQMhDgICAwoCEwUKBQyTAwUMAAYEAg4DCgIUBQwMAAMDBgQCDwULCgIUBQySAAULBQsIFQpibGVuZEFtb3V0AwQAAAYDAQMAAAAAAADwPwMJAwgOAgYDAQMAAAAAAADwPwMJAzUOAQYCBAYDCgIKBQsIAAMCDgMDAwIEAwMDAwEDAAAAAAAAAEADAwMACwIIAgYECgINBQySAAULCQMpDgECFQMFCwULBoEKAg0FDAwAAwIVAwMACwYOAgkCBgkKAg0FDAwAAwEDAAAAAAAA8D8DAgIMAAAAAA";
+prefab.terrain.TerrainColorNormalShader.SRC = "HXSLJ3ByZWZhYi50ZXJyYWluLlRlcnJhaW5Db2xvck5vcm1hbFNoYWRlchABBXJhbmdlAwIAAAIEZnJvbQUKAgAAAwJ0bwUKAgAABA1hbGJlZG9UZXh0dXJlCgIAAAUTbm9ybWFsSGVpZ2h0VGV4dHVyZQoCAAAGBnJvdGF0ZQUKAgAABwl0cmFuc2xhdGUFCgIAAAgIaW52U2NhbGUFCgIAAAkFREVCVUcCAgABAAAAAAAKE3RyYW5zZm9ybWVkUG9zaXRpb24FCwQAAAsRdHJhbnNmb3JtZWROb3JtYWwFCwQAAAwKcGl4ZWxDb2xvcgUMBAAADRByZWxhdGl2ZVBvc2l0aW9uBQsEAAAODXRlcnJhaW5Ob3JtYWwFCwQAAA8MdGVycmFpbkNvbG9yBQsEAAAQCGZyYWdtZW50DgYAAAEBEAAABQoIEQlyb3RhdGVQb3MFCgQAAAYACgIKBQsRAAUKAgcFCgUKAAYEAhEFCgkDKA4CBgMGAQoCEQUKAAADCgIGBQoAAAMDBgEKAhEFCgQAAwoCBgUKBAADAwMGAAYBCgIRBQoAAAMKAgYFCgQAAwMGAQoCEQUKBAADCgIGBQoAAAMDAwUKBQoGgQIRBQoCCAUKBQoIEgl0ZXJyYWluVVYFCgQAAAYCBAYDAhEFCgICBQoFCgUKBAYACQMPDgECAwUKBQoJAw8OAQICBQoFCgUKBQoFCgAIExN0ZXJyYWluSGVpZ2h0Tm9ybWFsBQwEAAAKCQMhDgICBQoCEgUKBQyTAwUMAAYEAg4FCwoJAzkOAQkDKg4CCgITBQySAAULAQMAAAAAAADwPwMFDAULkgAFCwULBgQCDwULCgkDIQ4CAgQKAhIFCgUMkgAFCwULCBQGYW1vdW50AwQAAAkDGg4DAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwkDNQ4BBgIKAg0FCwgAAwIBAwMDAwALAgkCBQIIFQpibGVuZEFtb3V0AwQAAAYDAQMAAAAAAADwPwMJAwgOAgYDAQMAAAAAAADwPwMJAzUOAQYCBAYDCgIKBQsIAAMKAhMFDAwAAwMDAgEDAwMDAQMAAAAAAAAAQAMDAwAGBAoCDAUMkgAFCwkDKQ4BAhUDBQsFCwAGBAoCDAUMkgAFCwkDGA4DAg8FCwoCDAUMkgAFCwIUAwULBQsABgQCCwULCQMYDgMCDgULAgsFCwIUAwULBQsA";
+prefab.terrain._TerrainMesh.TerrainBakeShader.SRC = "HXSLLXByZWZhYi50ZXJyYWluLl9UZXJyYWluTWVzaC5UZXJyYWluQmFrZVNoYWRlch0BBWlucHV0DQECAghwb3NpdGlvbgUKAQEAAwJ1dgUKAQEAAQAABAVmbGlwWQMCAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgKcGl4ZWxDb2xvcgUMBAAACQxjYWxjdWxhdGVkVVYFCgQAAAoMYWxiZWRvT3V0cHV0BQwEAAALDG5vcm1hbE91dHB1dAUMBAAADAlwYnJPdXRwdXQFDAQAAA0NU1VSRkFDRV9DT1VOVAECAAEAAAAAAA4OYWxiZWRvVGV4dHVyZXMLAgAADw5ub3JtYWxUZXh0dXJlcwsCAAAQC3BiclRleHR1cmVzCwIAABEOd2VpZ2h0VGV4dHVyZXMLAgAAEg9zdXJmYWNlSW5kZXhNYXAKAgAAEw1zdXJmYWNlUGFyYW1zDwUMDQIAABQTc2Vjb25kU3VyZmFjZVBhcmFtcw8FDA0CAAAVB3RpbGVQb3MFCgIAABYIdGlsZVNpemUFCgIAABcMc291cmNlSGVpZ2h0CgIAABgMc291cmNlTm9ybWFsCgIAABkTaGVpZ2h0QmxlbmRTdHJlbmd0aAMCAAAaDmJsZW5kU2hhcnBuZXNzAwIAABsGc291cmNlCgIAABwEZnJvbQUKAgAAHQJ0bwUKAgAAHghfX2luaXRfXw4GAAAfBnZlcnRleA4GAAAgDGdldHN1cmZhY2VVVg4GAAAhCGZyYWdtZW50DgYAAAQCHgAABQIGBAIHBQwCCAUMBQwGBAIJBQoCAwUKBQoAAB8AAAUCBgQCBgUMCQMqDgMJAzsOAQkDGA4DAhwFCgIdBQoJAzoOAQICBQoFCgUKBQoBAwAAAAAAAAAAAwEDAAAAAAAA8D8DBQwFDAaBCgIGBQwEAAMCBAMDAAMgAiICaWQBBAAAIwJ1dgUKBAAABQsFCAgkAnV2BQoEAAAGAAIVBQoGAQIjBQoCFgUKBQoFCgAIJQVhbmdsZQMEAAAKEQITDwUMDQIiAQUMDAADAAgmBm9mZnNldAUKBAAACQMoDgIKEQITDwUMDQIiAQUMBAADChECEw8FDA0CIgEFDAgAAwUKAAgnB3RpbGxpbmcDBAAAChECEw8FDA0CIgEFDAAAAwAIKAd3b3JsZFVWBQoEAAAGAAYBAiQFCgInAwUKAiYFCgUKAAgpA3JlcwUKBAAACQMoDgIGAwYBCgIoBQoAAAMJAwMOAQIlAwMDBgEKAigFCgQAAwkDAg4BAiUDAwMDBgAGAQoCKAUKBAADCQMDDgECJQMDAwYBCgIoBQoAAAMJAwIOAQIlAwMDAwUKAAgqCXN1cmZhY2VVVgULBAAACQMpDgIGEwIpBQoBAwAAAAAAAPA/AwUKCQMmDgECIgEDBQsADQIqBQsAAAEhAAAFIQgrAWkFAwQAAAkDLA4BBgEKCQMhDgICEgoCCQUKBQySAAULAQMAAAAAAOBvQAMFCwUDAAgsAXcFCwQAAAkDKQ4DCgkDIQ4CAhELCQMpDgICCQUKCQMmDgEKAisFAwAAAQMFCwUMAAADCgkDIQ4CAhELCQMpDgICCQUKCQMmDgEKAisFAwQAAQMFCwUMAAADCgkDIQ4CAhELCQMpDgICCQUKCQMmDgEKAisFAwgAAQMFCwUMAAADBQsACC0Kc3VyZmFjZVVWMQULBAAACQIgDgIKAisFAwAAAQIJBQoFCwAILgpzdXJmYWNlVVYyBQsEAAAJAiAOAgoCKwUDBAABAgkFCgULAAgvCnN1cmZhY2VVVjMFCwQAAAkCIA4CCgIrBQMIAAECCQUKBQsACDAEcGJyMQUMBAAACgkDIQ4CAhALAi0FCwUMkwMFDAAIMQRwYnIyBQwEAAAKCQMhDgICEAsCLgULBQyTAwUMAAgyBHBicjMFDAQAAAoJAyEOAgIQCwIvBQsFDJMDBQwACDMBaAULBAAACQMpDgMGAAoRAhQPBQwNCgIrBQMAAAEFDAAAAwYBCgIwBQwMAAMEBgMKEQIUDwUMDQoCKwUDAAABBQwEAAMKEQIUDwUMDQoCKwUDAAABBQwAAAMDAwMDBgAKEQIUDwUMDQoCKwUDBAABBQwAAAMGAQoCMQUMDAADBAYDChECFA8FDA0KAisFAwQAAQUMBAADChECFA8FDA0KAisFAwQAAQUMAAADAwMDAwYAChECFA8FDA0KAisFAwgAAQUMAAADBgEKAjIFDAwAAwQGAwoRAhQPBQwNCgIrBQMIAAEFDAQAAwoRAhQPBQwNCgIrBQMIAAEFDAAAAwMDAwMFCwAINAFoBQsEAAAJAxgOAwkDKQ4DAQMAAAAAAADwPwMBAwAAAAAAAPA/AwEDAAAAAAAA8D8DBQsCMwULAhkDBQsABoECLAULAjQFCwULCDUCd3MFCwQAAAkDGA4DAiwFCwIsBQsCGgMFCwAINgFtAwQAAAkDFg4CCgIsBQsAAAMJAxYOAgoCLAULBAADCgIsBQsIAAMDAwAINwJtdwULBAAACQMpDgMBAwAAAAAAAAAAAwEDAAAAAAAAAAADAQMAAAAAAAAAAAMFCwALBgUCNgMKAiwFCwAAAwIGBAI3BQsJAykOAwEDAAAAAAAA8D8DAQMAAAAAAAAAAAMBAwAAAAAAAAAAAwULBQsAAAsGBQI2AwoCLAULBAADAgYEAjcFCwkDKQ4DAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwEDAAAAAAAAAAADBQsFCwAACwYFAjYDCgIsBQsIAAMCBgQCNwULCQMpDgMBAwAAAAAAAAAAAwEDAAAAAAAAAAADAQMAAAAAAADwPwMFCwULAAAGBAIsBQsJAxgOAwIsBQsCNwULAhoDBQsFCwg4DXRlcnJhaW5Ob3JtYWwFCwQAAAkDOQ4BCgkDIQ4CAhgKAgkFCgUMkwMFDAULAAg5CWJpdGFuZ2VudAULBAAACQMeDgIJAykOAwEDAAAAAAAA8D8DAQMAAAAAAAAAAAMBAwAAAAAAAAAAAwULAjgFCwULAAg6B3RhbmdlbnQFCwQAAAkDHg4CAjgFCwI5BQsFCwAIOwNUQk4GBAAACQMyDgMJAykOAwoCOgULAAADCgI5BQsAAAMKAjgFCwAAAwULCQMpDgMKAjoFCwQAAwoCOQULBAADCgI4BQsEAAMFCwkDKQ4DCgI6BQsIAAMKAjkFCwgAAwoCOAULCAADBQsGAAg8BHdTdW0DBAAABgAGAAoCLAULAAADCgIsBQsEAAMDCgIsBQsIAAMDAAg9BmFsYmVkbwULBAAABgAGAAYBCgkDIQ4CAg4LAi0FCwUMkgAFCwoCLAULAAADBQsGAQoJAyEOAgIOCwIuBQsFDJIABQsKAiwFCwQAAwULBQsGAQoJAyEOAgIOCwIvBQsFDJIABQsKAiwFCwgAAwULBQsABoICPQULAjwDBQsIPgZub3JtYWwFCwQAAAYABgAGAQkDOQ4BCQMhDgICDwsCLQULBQwFCwoCLAULAAADBQsGAQkDOQ4BCQMhDgICDwsCLgULBQwFCwoCLAULBAADBQsFCwYBCQM5DgEJAyEOAgIPCwIvBQsFDAULCgIsBQsIAAMFCwULAAaCAj4FCwI8AwULBgQCPgULCgkDOA4BBgECPgULAjsGBQsFDJIABQsFCwg/A3BicgUMBAAABgAGAAYBAjAFDAoCLAULAAADBQwGAQIxBQwKAiwFCwQAAwUMBQwGAQIyBQwKAiwFCwgAAwUMBQwABoICPwUMAjwDBQwGBAIKBQwJAyoOAgI9BQsBAwAAAAAAAPA/AwUMBQwGBAILBQwJAyoOAgI+BQsBAwAAAAAAAPA/AwUMBQwGBAIMBQwCPwUMBQwA";
+prefab.terrain._TerrainMesh.CopyHeightNormalShader.SRC = "HXSLMnByZWZhYi50ZXJyYWluLl9UZXJyYWluTWVzaC5Db3B5SGVpZ2h0Tm9ybWFsU2hhZGVyDQEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgxzb3VyY2VIZWlnaHQKAgAACxBzb3VyY2VIZWlnaHRTaXplBQoCAAAMDHNvdXJjZU5vcm1hbAoCAAANBGZyb20FCgIAAA4CdG8FCgIAAA8IX19pbml0X18OBgAAEAZ2ZXJ0ZXgOBgAAEQhmcmFnbWVudA4GAAADAg8AAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAAQAAAFAgYEAgYFDAkDKg4DCQM7DgEJAxgOAwINBQoCDgUKCQM6DgECAgUKBQoFCgUKAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwGgQoCBgUMBAADAgQDAwABEQAABQEGBAIIBQwJAyoOAgoJAyEOAgIMCgIJBQoFDJIABQsKCQMhDgICCgoCCQUKBQwAAAMFDAUMAA";
 
 //# sourceMappingURL=hide-plugin.js.map

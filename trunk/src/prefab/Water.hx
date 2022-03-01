@@ -30,7 +30,9 @@ class WaterShader extends hxsl.Shader {
 		@param var opacityPower : Float;
 		@param var maxDepth : Float;
 
-		@param var waveIntensity : Float;
+		@param @const var WAVE_NUMBER : Int;
+		@param var waveIntensities : Array<Float,WAVE_NUMBER>;
+		@param var waveSpeed : Float;
 
 		@param var shoreDepth : Float;
 
@@ -55,7 +57,7 @@ class WaterShader extends hxsl.Shader {
 		var waterDepth : Float;
 
 		function wave(pos : Vec3) : Vec3 {
-			return pos + saturate(waterDepth / shoreDepth) * waveIntensity * vec3(0.0, 0.0, 0.2 * sin(pos.x + global.time));
+			return pos + saturate(waterDepth / shoreDepth) * waveIntensities[0] * vec3(0.0, 0.0, 0.2 * sin(pos.x + waveSpeed * global.time));
 		}
 
 		function d(delta : Vec3) : Vec3 {
@@ -107,7 +109,9 @@ class Water extends hrt.prefab.terrain.Terrain {
 	@:s public var opacityPower : Float = 5.0;
 	@:s public var maxDepth : Float = 5.0;
 
-	@:s public var waveIntensity : Float = 1.0;
+	@:s public var waveNumber : Int = 1;
+	@:s public var waveIntensities : Array<Float> = [];
+	@:s public var waveSpeed : Float = 1.0;
 
 	@:s public var shoreDepth : Float = 1.0;
 
@@ -132,7 +136,9 @@ class Water extends hrt.prefab.terrain.Terrain {
 		waterShader.opacityPower = opacityPower;
 		waterShader.maxDepth = maxDepth;
 
-		waterShader.waveIntensity = waveIntensity;
+		waterShader.WAVE_NUMBER = waveNumber;
+		waterShader.waveIntensities = waveIntensities;
+		waterShader.waveSpeed = waveSpeed;
 
 		waterShader.shoreDepth = shoreDepth;
 	}
@@ -168,45 +174,60 @@ class Water extends hrt.prefab.terrain.Terrain {
 		return { icon : "square", name : "Water" };
 	}
 
-	override function edit( ctx : hide.prefab.EditContext ) {
-		super.edit(ctx);
-		ctx.properties.add(new hide.Element('
-			<div class="group" name="Surface">
+	override function edit( ectx : hide.prefab.EditContext ) {
+		super.edit(ectx);
+
+		var e1 = new hide.Element('
+		<div class="group" name="Surface">
+			<dl>
+				<dt>Cells</dt><dd><input type="range" min="1" max="100" step="1" field="cellCount"/></dd>
+			</dl>
+		</div>
+		<div class="group" name="Color">
+			<dl>
+				<dt>Near Water Color </dt><dd><input type="color" field="nearWaterColor"/></dd>
+				<dt>Middle Water Color</dt><dd><input type="color" field="middleWaterColor"/></dd>
+				<dt>Deep Water Color</dt><dd><input type="color" field="deepWaterColor"/></dd>
+				<dt>Roughness</dt><dd><input type="range" min="0" max="1" field="roughness"/></dd>
+				<dt>Opacity Power</dt><dd><input type="range" min="0" max="5" field="opacityPower"/></dd>
+				<dt>Lake max depth</dt><dd><input type="range" min="0" max="4" field="maxDepth"/></dd>
+			</dl>
+		</div>
+		<div class="group" name="Color Noise">
+			<dl>
+				<dt>Texture</dt><dd><input type="texturepath" field="colorNoiseTexture"/></dd>
+				<dt>Scale</dt><dd><input type="range" min="0" max ="1" step="0.01" field="colorNoiseScale"/></dd>
+				<dt>Strength</dt><dd><input type="range" min="0" max ="1" step="0.01" field="colorNoiseStrength"/></dd>
+			</dl>
+		</div>
+		<div class="group" name="Shore">
+			<dl>
+				<dt>Shore depth</dt><dd><input type="range" min="0" max="10" field="shoreDepth"/></dd>
+			</dl>
+		</div>
+		<dt>Wave Number</dt><dd><input type="range" min="1" max="6" step="1"field="waveNumber"/></dd>
+		');
+		ectx.properties.add(e1, this, function(pname) {
+				ectx.onChange(this, pname);
+		});
+		e1.find("[field=waveNumber]").change(function(ev) {
+			waveIntensities.resize(waveNumber);
+			ectx.rebuildProperties();
+		});
+		for (i in 0...waveNumber) {
+			ectx.properties.add(new hide.Element('
+			<div class="section">
+				<h1>Wave ${i+1}</h1>
+				<div class="content">
 				<dl>
-					<dt>Cells</dt><dd><input type="range" min="1" max="100" step="1" field="cellCount"/></dd>
-				</dl>
-			</div>
-			<div class="group" name="Color">
-				<dl>
-					<dt>Near Water Color </dt><dd><input type="color" field="nearWaterColor"/></dd>
-					<dt>Middle Water Color</dt><dd><input type="color" field="middleWaterColor"/></dd>
-					<dt>Deep Water Color</dt><dd><input type="color" field="deepWaterColor"/></dd>
-					<dt>Roughness</dt><dd><input type="range" min="0" max="1" field="roughness"/></dd>
-					<dt>Opacity Power</dt><dd><input type="range" min="0" max="5" field="opacityPower"/></dd>
-					<dt>Lake max depth</dt><dd><input type="range" min="0" max="4" field="maxDepth"/></dd>
-				</dl>
-			</div>
-			<div class="group" name="Color Noise">
-				<dl>
-					<dt>Texture</dt><dd><input type="texturepath" field="colorNoiseTexture"/></dd>
-					<dt>Scale</dt><dd><input type="range" min="0" max ="1" step="0.01" field="colorNoiseScale"/></dd>
-					<dt>Strength</dt><dd><input type="range" min="0" max ="1" step="0.01" field="colorNoiseStrength"/></dd>
-				</dl>
-			</div>
-			<div class="group" name="Wave">
-				<dl>
-					<dt>Wave Intensity</dt><dd><input type="range" min="0" max="10" field="waveIntensity"/></dd>
+					<dt>Wave Intensity</dt><dd><input type="range" min="0" max="10" field="waveIntensities[0]"/></dd>
 					<dt>Wave Speed</dt><dd><input type="range" min="0" max="1" field="waveSpeed"/></dd>
 				</dl>
 			</div>
-			<div class="group" name="Shore">
-				<dl>
-					<dt>Shore depth</dt><dd><input type="range" min="0" max="10" field="shoreDepth"/></dd>
-				</dl>
-			</div>
 			'), this, function(pname) {
-				ctx.onChange(this, pname);
-		});
+				ectx.onChange(this, pname);
+			});
+		}
 	}
 
 	#end

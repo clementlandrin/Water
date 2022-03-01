@@ -144,6 +144,7 @@ class Water extends hrt.prefab.terrain.Terrain {
 			t.material.mainPass.setBlendMode(Alpha);
 			t.material.mainPass.depthWrite = false;
 			t.material.mainPass.culling = None;
+
 			var terrainShader = t.material.mainPass.getShader(hrt.shader.Terrain);
 			if ( terrainShader != null )
 				t.material.mainPass.removeShader(terrainShader);
@@ -153,6 +154,11 @@ class Water extends hrt.prefab.terrain.Terrain {
 			shader = t.material.mainPass.getShader(h3d.shader.pbr.StrengthValues);
 			if ( shader == null )
 				t.material.mainPass.addShader(new h3d.shader.pbr.StrengthValues());
+
+			var ssr = t.material.allocPass("ssr", true);
+			ssr.setBlendMode(Alpha);
+			ssr.depthWrite = false;
+			ssr.depthTest = LessEqual;
 		}
 	}
 

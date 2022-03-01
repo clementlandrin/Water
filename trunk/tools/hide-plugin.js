@@ -216,6 +216,10 @@ prefab.terrain.TerrainBlendShadowPass.prototype = $extend(hxsl.Shader.prototype,
 	,getParamFloatValue: function(index) {
 		return 0.;
 	}
+	,setParamIndexValue: function(index,val) {
+	}
+	,setParamIndexFloatValue: function(index,val) {
+	}
 	,__class__: prefab.terrain.TerrainBlendShadowPass
 });
 prefab.TerrainAlphaBlend = $hxClasses["prefab.TerrainAlphaBlend"] = function(parent) {
@@ -481,6 +485,73 @@ prefab.WaterShader.prototype = $extend(hxsl.Shader.prototype,{
 		}
 		return 0.;
 	}
+	,setParamIndexValue: function(index,val) {
+		switch(index) {
+		case 0:
+			this.nearWaterColor__ = val;
+			break;
+		case 1:
+			this.middleWaterColor__ = val;
+			break;
+		case 2:
+			this.deepWaterColor__ = val;
+			break;
+		case 3:
+			this.waterRoughness__ = val;
+			break;
+		case 4:
+			this.opacityPower__ = val;
+			break;
+		case 5:
+			this.maxDepth__ = val;
+			break;
+		case 6:
+			this.waveIntensity__ = val;
+			break;
+		case 7:
+			this.shoreDepth__ = val;
+			break;
+		case 8:
+			this.from__ = val;
+			break;
+		case 9:
+			this.to__ = val;
+			break;
+		case 10:
+			this.rotate__ = val;
+			break;
+		case 11:
+			this.translate__ = val;
+			break;
+		case 12:
+			this.invScale__ = val;
+			break;
+		case 13:
+			this.normalHeightTexture__ = val;
+			break;
+		default:
+		}
+	}
+	,setParamIndexFloatValue: function(index,val) {
+		switch(index) {
+		case 3:
+			this.waterRoughness__ = val;
+			break;
+		case 4:
+			this.opacityPower__ = val;
+			break;
+		case 5:
+			this.maxDepth__ = val;
+			break;
+		case 6:
+			this.waveIntensity__ = val;
+			break;
+		case 7:
+			this.shoreDepth__ = val;
+			break;
+		default:
+		}
+	}
 	,clone: function() {
 		var s = Object.create(prefab.WaterShader.prototype);
 		s.shader = this.shader;
@@ -582,6 +653,10 @@ prefab.Water.prototype = $extend(hrt.prefab.terrain.Terrain.prototype,{
 			if(shader == null) {
 				t.material.passes.addShader(new h3d.shader.pbr.StrengthValues());
 			}
+			var ssr = t.material.allocPass("ssr",true);
+			ssr.setBlendMode(h2d.BlendMode.Alpha);
+			ssr.set_depthWrite(false);
+			ssr.set_depthTest(h3d.mat.Compare.LessEqual);
 		}
 	}
 	,getHideProps: function() {
@@ -768,6 +843,40 @@ prefab.terrain.TerrainBlend.prototype = $extend(hxsl.Shader.prototype,{
 		}
 		return 0.;
 	}
+	,setParamIndexValue: function(index,val) {
+		switch(index) {
+		case 0:
+			this.from__ = val;
+			break;
+		case 1:
+			this.to__ = val;
+			break;
+		case 2:
+			this.normalHeightTexture__ = val;
+			break;
+		case 3:
+			this.range__ = val;
+			break;
+		case 4:
+			this.rotate__ = val;
+			break;
+		case 5:
+			this.translate__ = val;
+			break;
+		case 6:
+			this.invScale__ = val;
+			break;
+		case 7:
+			this.DEBUG__ = val;
+			break;
+		default:
+		}
+	}
+	,setParamIndexFloatValue: function(index,val) {
+		if(index == 3) {
+			this.range__ = val;
+		}
+	}
 	,clone: function() {
 		var s = Object.create(prefab.terrain.TerrainBlend.prototype);
 		s.shader = this.shader;
@@ -897,6 +1006,43 @@ prefab.terrain.TerrainColorNormalShader.prototype = $extend(hxsl.Shader.prototyp
 			return this.range__;
 		}
 		return 0.;
+	}
+	,setParamIndexValue: function(index,val) {
+		switch(index) {
+		case 0:
+			this.range__ = val;
+			break;
+		case 1:
+			this.from__ = val;
+			break;
+		case 2:
+			this.to__ = val;
+			break;
+		case 3:
+			this.albedoTexture__ = val;
+			break;
+		case 4:
+			this.normalHeightTexture__ = val;
+			break;
+		case 5:
+			this.rotate__ = val;
+			break;
+		case 6:
+			this.translate__ = val;
+			break;
+		case 7:
+			this.invScale__ = val;
+			break;
+		case 8:
+			this.DEBUG__ = val;
+			break;
+		default:
+		}
+	}
+	,setParamIndexFloatValue: function(index,val) {
+		if(index == 0) {
+			this.range__ = val;
+		}
 	}
 	,clone: function() {
 		var s = Object.create(prefab.terrain.TerrainColorNormalShader.prototype);

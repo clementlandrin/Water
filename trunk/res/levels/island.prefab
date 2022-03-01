@@ -19,6 +19,15 @@
 					"type": "environment",
 					"name": "environment",
 					"sourceMapPath": "assets/worldmap/textures/envmap.jpg"
+				},
+				{
+					"type": "rfx.ssr",
+					"name": "ssr",
+					"intensity": 50,
+					"maxRayDistance": 50,
+					"stepsFirstPass": 50,
+					"thickness": 1.2,
+					"blurRadius": 1.06
 				}
 			]
 		},
@@ -86,7 +95,7 @@
 			"roughness": 0.2,
 			"opacityPower": 0.76,
 			"maxDepth": 15,
-			"waveIntensity": 3.71,
+			"waveIntensity": 1.06,
 			"shoreDepth": 7.35,
 			"surfaceCount": 1,
 			"surfaceSize": 512,
@@ -101,6 +110,341 @@
 					"offsetY": 0,
 					"minHeight": 0,
 					"maxHeight": 1
+				}
+			]
+		},
+		{
+			"type": "object",
+			"name": "group",
+			"x": -10.32,
+			"y": -30.87,
+			"z": 7.06,
+			"rotationZ": -25.9,
+			"children": [
+				{
+					"type": "box",
+					"name": "box",
+					"scaleX": 10,
+					"scaleY": 10,
+					"scaleZ": 10,
+					"children": [
+						{
+							"type": "material",
+							"name": "material",
+							"props": {
+								"PBR": {
+									"mode": "PBR",
+									"blend": "None",
+									"shadows": true,
+									"culling": "Back",
+									"depthTest": "Less",
+									"colorMask": 15,
+									"enableStencil": false
+								}
+							}
+						}
+					]
+				},
+				{
+					"type": "box",
+					"name": "box",
+					"z": 5,
+					"scaleX": 7,
+					"scaleY": 10,
+					"scaleZ": 7,
+					"rotationY": 45,
+					"children": [
+						{
+							"type": "material",
+							"name": "material",
+							"props": {
+								"PBR": {
+									"mode": "PBR",
+									"blend": "None",
+									"shadows": true,
+									"culling": "Back",
+									"depthTest": "Less",
+									"colorMask": 15,
+									"enableStencil": false
+								}
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"type": "object",
+			"name": "group",
+			"x": -32.53,
+			"y": 12.17,
+			"z": 13.4,
+			"scaleX": 0.5,
+			"scaleY": 0.5,
+			"scaleZ": 0.5,
+			"children": [
+				{
+					"type": "box",
+					"name": "box",
+					"y": 9.61,
+					"z": 25.65,
+					"scaleX": 5,
+					"scaleY": 20,
+					"children": [
+						{
+							"type": "material",
+							"name": "material",
+							"props": {
+								"PBR": {
+									"mode": "PBR",
+									"blend": "None",
+									"shadows": true,
+									"culling": "Back",
+									"depthTest": "Less",
+									"colorMask": 15,
+									"enableStencil": false
+								}
+							},
+							"color": [
+								0,
+								1,
+								0.06274509803921569,
+								1
+							]
+						}
+					]
+				},
+				{
+					"type": "box",
+					"name": "box",
+					"x": 4.99,
+					"y": 6.77,
+					"z": 22.5,
+					"scaleX": 5,
+					"scaleY": 20,
+					"rotationX": -28.1,
+					"rotationZ": -26.9,
+					"children": [
+						{
+							"type": "material",
+							"name": "material",
+							"props": {
+								"PBR": {
+									"mode": "PBR",
+									"blend": "None",
+									"shadows": true,
+									"culling": "Back",
+									"depthTest": "Less",
+									"colorMask": 15,
+									"enableStencil": false
+								}
+							},
+							"color": [
+								0,
+								1,
+								0.06274509803921569,
+								1
+							]
+						}
+					]
+				},
+				{
+					"type": "box",
+					"name": "box",
+					"x": 5.22,
+					"y": 0.11,
+					"z": 20.64,
+					"scaleX": 5,
+					"scaleY": 20,
+					"rotationX": -34.2,
+					"rotationZ": -89.1,
+					"children": [
+						{
+							"type": "material",
+							"name": "material",
+							"props": {
+								"PBR": {
+									"mode": "PBR",
+									"blend": "None",
+									"shadows": true,
+									"culling": "Back",
+									"depthTest": "Less",
+									"colorMask": 15,
+									"enableStencil": false
+								}
+							},
+							"color": [
+								0,
+								1,
+								0.06274509803921569,
+								1
+							]
+						}
+					]
+				},
+				{
+					"type": "box",
+					"name": "box",
+					"x": 6.99,
+					"y": -5.24,
+					"z": 25.65,
+					"scaleX": 5,
+					"scaleY": 20,
+					"rotationZ": -123.7,
+					"children": [
+						{
+							"type": "material",
+							"name": "material",
+							"props": {
+								"PBR": {
+									"mode": "PBR",
+									"blend": "None",
+									"shadows": true,
+									"culling": "Back",
+									"depthTest": "Less",
+									"colorMask": 15,
+									"enableStencil": false
+								}
+							},
+							"color": [
+								0,
+								1,
+								0.06274509803921569,
+								1
+							]
+						}
+					]
+				},
+				{
+					"type": "box",
+					"name": "box",
+					"x": -0.46,
+					"y": -7.31,
+					"z": 19.48,
+					"scaleX": 5,
+					"scaleY": 20,
+					"rotationX": -41.1,
+					"rotationZ": 179.6,
+					"children": [
+						{
+							"type": "material",
+							"name": "material",
+							"props": {
+								"PBR": {
+									"mode": "PBR",
+									"blend": "None",
+									"shadows": true,
+									"culling": "Back",
+									"depthTest": "Less",
+									"colorMask": 15,
+									"enableStencil": false
+								}
+							},
+							"color": [
+								0,
+								1,
+								0.06274509803921569,
+								1
+							]
+						}
+					]
+				},
+				{
+					"type": "box",
+					"name": "box",
+					"x": -6.38,
+					"y": -5.51,
+					"z": 25.65,
+					"scaleX": 5,
+					"scaleY": 20,
+					"rotationZ": 132.1,
+					"children": [
+						{
+							"type": "material",
+							"name": "material",
+							"props": {
+								"PBR": {
+									"mode": "PBR",
+									"blend": "None",
+									"shadows": true,
+									"culling": "Back",
+									"depthTest": "Less",
+									"colorMask": 15,
+									"enableStencil": false
+								}
+							},
+							"color": [
+								0,
+								1,
+								0.06274509803921569,
+								1
+							]
+						}
+					]
+				},
+				{
+					"type": "box",
+					"name": "box",
+					"x": -6.37,
+					"y": 4.19,
+					"z": 22.65,
+					"scaleX": 5,
+					"scaleY": 20,
+					"rotationX": -17.7,
+					"rotationZ": 46.1,
+					"children": [
+						{
+							"type": "material",
+							"name": "material",
+							"props": {
+								"PBR": {
+									"mode": "PBR",
+									"blend": "None",
+									"shadows": true,
+									"culling": "Back",
+									"depthTest": "Less",
+									"colorMask": 15,
+									"enableStencil": false
+								}
+							},
+							"color": [
+								0,
+								1,
+								0.06274509803921569,
+								1
+							]
+						}
+					]
+				},
+				{
+					"type": "box",
+					"name": "box",
+					"scaleX": 5,
+					"scaleY": 5,
+					"scaleZ": 50,
+					"children": [
+						{
+							"type": "material",
+							"name": "material",
+							"props": {
+								"PBR": {
+									"mode": "PBR",
+									"blend": "None",
+									"shadows": true,
+									"culling": "Back",
+									"depthTest": "Less",
+									"colorMask": 15,
+									"enableStencil": false
+								}
+							},
+							"color": [
+								0.7019607843137254,
+								0.47058823529411764,
+								0,
+								1
+							]
+						}
+					]
 				}
 			]
 		}

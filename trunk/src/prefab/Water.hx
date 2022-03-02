@@ -17,8 +17,7 @@ class WaterShader extends hxsl.Shader {
 		};
 
 		@global var camera : {
-			var inverseViewProj : Mat4;			var inverseViewProj : Mat4;
-
+			var inverseViewProj : Mat4;
 		};
 		@global var depthMap : Channel;
 
@@ -31,8 +30,12 @@ class WaterShader extends hxsl.Shader {
 		@param var maxDepth : Float;
 
 		@param @const var WAVE_NUMBER : Int;
+		@param @const var WAVE_NUMBER_BIS : Int;
 		@param var waveIntensities : Array<Float,WAVE_NUMBER>;
-		@param var waveSpeed : Float;
+		@param var waveDirections : Array<Float,WAVE_NUMBER>;
+		@param var waveFrequencies : Array<Float,WAVE_NUMBER>;
+		@param var waveVectors : Array<Float,WAVE_NUMBER_BIS>;
+		@param var normalStrength : Float;
 
 		@param var shoreDepth : Float;
 
@@ -56,8 +59,14 @@ class WaterShader extends hxsl.Shader {
 
 		var waterDepth : Float;
 
+		var waveOffset : Float;
+
 		function wave(pos : Vec3) : Vec3 {
-			return pos + saturate(waterDepth / shoreDepth) * waveIntensities[0] * vec3(0.0, 0.0, 0.2 * sin(pos.x + waveSpeed * global.time));
+			waveOffset = 0.0;
+			@unroll for (i in 0...WAVE_NUMBER) {
+				waveOffset += waveIntensities[i] * sin(dot(pos.xy, vec2(waveVectors[2*i], waveVectors[2*i+1])) + waveFrequencies[i] * global.time);
+			}
+			return pos + saturate(waterDepth / shoreDepth) * vec3(0.0, 0.0, waveOffset);
 		}
 
 		function d(delta : Vec3) : Vec3 {
@@ -92,7 +101,8 @@ class WaterShader extends hxsl.Shader {
 			var opacity = mix(0.2, 1.0, pow(1.0 - t, opacityPower));
 
 			pixelColor.rgba = vec4(waterColor, opacity);
-			transformedNormal = cross(d(vec3(0.1, 0.0, 0.0)), d(vec3(0.0, 0.1, 0.0)));
+			transformedNormal = normalize(cross(d(vec3(0.1, 0.0, 0.0)), d(vec3(0.0, 0.1, 0.0))));
+			transformedNormal = mix(vec3(0.0, 0.0, 1.0), transformedNormal, normalStrength);
 			roughness = waterRoughness;
 		}
 	};
@@ -109,9 +119,9 @@ class Water extends hrt.prefab.terrain.Terrain {
 	@:s public var opacityPower : Float = 5.0;
 	@:s public var maxDepth : Float = 5.0;
 
-	@:s public var waveNumber : Int = 1;
-	@:s public var waveIntensities : Array<Float> = [];
-	@:s public var waveSpeed : Float = 1.0;
+	@:s public var normalStrength : Float = 1.0;
+
+	@:s public var waves : Array<{intensity : Float, kx : Float, ky : Float, frequency : Float}> = [{intensity : 1.0, kx : 1.0, ky : 0.0, frequency : 1.0}];
 
 	@:s public var shoreDepth : Float = 1.0;
 
@@ -136,9 +146,22 @@ class Water extends hrt.prefab.terrain.Terrain {
 		waterShader.opacityPower = opacityPower;
 		waterShader.maxDepth = maxDepth;
 
-		waterShader.WAVE_NUMBER = waveNumber;
+		waterShader.WAVE_NUMBER = waves.length;
+		waterShader.WAVE_NUMBER_BIS = waves.length * 2;
+		var waveIntensities = [];
+		var waveFrequencies = [];
+		var waveVectors = [];
+		for (wave in waves) {
+			waveIntensities.push(wave.intensity);
+			waveFrequencies.push(wave.frequency);
+			waveVectors.push(wave.kx);
+			waveVectors.push(wave.ky);
+		}
 		waterShader.waveIntensities = waveIntensities;
-		waterShader.waveSpeed = waveSpeed;
+		waterShader.waveFrequencies = waveFrequencies;
+		waterShader.waveVectors = waveVectors;
+
+		waterShader.normalStrength = normalStrength;
 
 		waterShader.shoreDepth = shoreDepth;
 	}
@@ -147,8 +170,8 @@ class Water extends hrt.prefab.terrain.Terrain {
 		super.loadTiles(ctx);
 		for (t in @:privateAccess terrain.tiles) {
 			t.material.mainPass.setPassName("decal");
-			t.material.mainPass.setBlendMode(Alpha);
-			t.material.mainPass.depthWrite = false;
+			t.material.mainPass.setBlendMode(None);
+			t.material.mainPass.depthWrite = true;
 			t.material.mainPass.culling = None;
 
 			var terrainShader = t.material.mainPass.getShader(hrt.shader.Terrain);
@@ -176,6 +199,7 @@ class Water extends hrt.prefab.terrain.Terrain {
 
 	override function edit( ectx : hide.prefab.EditContext ) {
 		super.edit(ectx);
+		var ctx = ectx.getContext(this);
 
 		var e1 = new hide.Element('
 		<div class="group" name="Surface">
@@ -205,29 +229,47 @@ class Water extends hrt.prefab.terrain.Terrain {
 				<dt>Shore depth</dt><dd><input type="range" min="0" max="10" field="shoreDepth"/></dd>
 			</dl>
 		</div>
-		<dt>Wave Number</dt><dd><input type="range" min="1" max="6" step="1"field="waveNumber"/></dd>
+		<dt>Normal strength</dt><dd><input type="range" min="0" max="1" field="normalStrength"/></dd>
+		<div class="group" name="Waves">
+			<dl>
+			<ul id="wave"></ul>
+			</dl>
+		</div>
 		');
 		ectx.properties.add(e1, this, function(pname) {
 				ectx.onChange(this, pname);
 		});
-		e1.find("[field=waveNumber]").change(function(ev) {
-			waveIntensities.resize(waveNumber);
-			ectx.rebuildProperties();
-		});
-		for (i in 0...waveNumber) {
-			ectx.properties.add(new hide.Element('
-			<div class="section">
-				<h1>Wave ${i+1}</h1>
-				<div class="content">
+
+		var list = e1.find("ul#wave");
+		ectx.properties.add(e1,this, (_) -> updateInstance(ctx));
+		for( wave in waves ) {
+			var e = new hide.Element('
+			<div class="group" name="Wave">
 				<dl>
-					<dt>Wave Intensity</dt><dd><input type="range" min="0" max="10" field="waveIntensities[0]"/></dd>
-					<dt>Wave Speed</dt><dd><input type="range" min="0" max="1" field="waveSpeed"/></dd>
+					<dt>Intensity</dt><dd><input type="range" min="0" max="3" field="intensity"/></dd>
+					<dt>Direction</dt><input field="kx"/><input field="ky"/>
+					<dt>Frequency</dt><dd><input type="range" min="0" max="3" field="frequency"/></dd>
 				</dl>
 			</div>
-			'), this, function(pname) {
-				ectx.onChange(this, pname);
+			');
+			e.appendTo(list);
+			ectx.properties.build(e, wave, (pname) -> {
+				updateInstance(ctx, pname);
 			});
 		}
+		var add = new hide.Element('<li><p><a href="#">[+]</a></p></li>');
+		add.appendTo(list);
+		add.find("a").click(function(_) {
+			waves.push({intensity : 1.0, kx : 1.0, ky : 0.0, frequency : 1.0});
+			ectx.rebuildProperties();
+		});
+		var sub = new hide.Element('<li><p><a href="#">[-]</a></p></li>');
+		sub.appendTo(list);
+		sub.find("a").click(function(_) {
+			if ( waves.length > 1 )
+				waves.pop();
+			ectx.rebuildProperties();
+		});
 	}
 
 	#end

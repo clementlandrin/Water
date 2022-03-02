@@ -310,7 +310,7 @@ class TerrainMesh extends hrt.prefab.terrain.TerrainMesh {
 		}
 
 		for( s in waterShaders ) {
-			s.normalHeightTexture = getNormalHeightTexture();
+			s.terrainHeightTexture = getNormalHeightTexture();
 			s.from.set(fromTo.x, fromTo.y);
 			s.to.set(fromTo.z, fromTo.w);
 			s.rotate.set(cos, sin);

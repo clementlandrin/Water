@@ -8,44 +8,28 @@ class WaterBakeShader extends h3d.shader.ScreenShader {
 
 		var heightMap : Vec4;
 
-		@param var tilePos : Vec2;
-		@param var tileSize : Vec2;
+		@global var global : {
+			var time : Float;
+		};
 
 		@param var from : Vec2;
 		@param var to : Vec2;
 
-		/*function vertex() {
-			var rotatePos = transformedPosition.xy + translate;
-			rotatePos = vec2(rotatePos.x * rotate.x - rotatePos.y * rotate.y, rotatePos.x * rotate.y + rotatePos.y * rotate.x);
-			rotatePos *= invScale;
-			var terrainUV = (rotatePos - from) / (abs(to) + abs(from));
-			var terrainHeightNormal = normalHeightTexture.get(terrainUV).rgba;
-			var terrainHeight = terrainHeightNormal.a;
-			waterDepth = (relativePosition * global.modelView.mat3x4()).z - terrainHeight;
+		@param @const var WAVE_NUMBER : Int;
+		@param @const var WAVE_NUMBER_BIS : Int;
+		@param var waveIntensities : Array<Float,WAVE_NUMBER>;
+		@param var waveFrequencies : Array<Float,WAVE_NUMBER>;
+		@param var waveVectors : Array<Float,WAVE_NUMBER_BIS>;
 
-			transformedPosition.xyz = wave(transformedPosition);
+		var waveOffset : Float;
+
+		function wave(pos : Vec2) : Float {
+			waveOffset = 0.0;
+			@unroll for (i in 0...WAVE_NUMBER) {
+				waveOffset += waveIntensities[i] * sin(dot(pos, vec2(waveVectors[2*i], waveVectors[2*i+1])) + waveFrequencies[i] * 0.5/*global.time*/);
+			}
+			return waveIntensities[0] * waveOffset;
 		}
-
-		function fragment() {
-			var screenPos = projectedPosition.xy / projectedPosition.w;
-			var depth = depthMap.get(screenToUv(screenPos));
-			var ruv = vec4( screenPos, depth, 1 );
-			var ppos = ruv * camera.inverseViewProj;
-			var wpos = ppos.xyz / ppos.w;
-
-			var p0 = 0.0;
-			var p1 = shoreDepth / maxDepth;
-			var p2 = 1.0;
-			var t = saturate(1.0 - waterDepth / maxDepth);
-			var waterColor = mix(deepWaterColor, mix(middleWaterColor, nearWaterColor, smoothstep(p1, p2, t)), smoothstep(p0, p1, t));
-
-			var opacity = mix(0.2, 1.0, pow(1.0 - t, opacityPower));
-
-			pixelColor.rgba = vec4(waterColor, opacity);
-			transformedNormal = normalize(cross(d(vec3(0.1, 0.0, 0.0)), d(vec3(0.0, 0.1, 0.0))));
-			transformedNormal = mix(vec3(0.0, 0.0, 1.0), transformedNormal, normalStrength);
-			roughness = waterRoughness;
-		}*/
 
 		function vertex() {
 			output.position = vec4(uvToScreen(mix(from, to, screenToUv(input.position))), 0, 1);
@@ -53,16 +37,13 @@ class WaterBakeShader extends h3d.shader.ScreenShader {
 		}
 
 		function fragment() {
-
-			/*var terrainNormal = unpackNormal(texture(sourceNormal, calculatedUV).rgba);
-			var bitangent = cross(vec3(1, 0, 0), terrainNormal);
-			var tangent = cross(terrainNormal, bitangent);
-			var TBN = mat3(	vec3(tangent.x, bitangent.x, terrainNormal.x),
-							vec3(tangent.y, bitangent.y, terrainNormal.y),
-							vec3(tangent.z, bitangent.z, terrainNormal.z));
-
-			var wSum = w.x + w.y + w.z;*/
-			heightMap = vec4(sin(output.position.x), sin(output.position.y), 0.0 ,1.0);
+			var height = wave(output.position.xy);
+			var tangentUV = output.position.xy + vec2(0.1, 0.0);
+			var tangent = normalize(vec3(tangentUV, wave(tangentUV)) - vec3(output.position.xy, height));
+			var bitangentUV = output.position.xy + vec2(0.0, 0.1);
+			var bitangent = normalize(vec3(bitangentUV, wave(bitangentUV)) - vec3(output.position.xy, height));
+			var normal = normalize(cross(tangent, bitangent));
+			heightMap = vec4(normal, height);
 		}
 	}
 }
@@ -99,7 +80,6 @@ class WaterShader extends hxsl.Shader {
 		@param @const var WAVE_NUMBER : Int;
 		@param @const var WAVE_NUMBER_BIS : Int;
 		@param var waveIntensities : Array<Float,WAVE_NUMBER>;
-		@param var waveDirections : Array<Float,WAVE_NUMBER>;
 		@param var waveFrequencies : Array<Float,WAVE_NUMBER>;
 		@param var waveVectors : Array<Float,WAVE_NUMBER_BIS>;
 		@param var normalStrength : Float;
@@ -111,7 +91,9 @@ class WaterShader extends hxsl.Shader {
 		@param var rotate : Vec2;
 		@param var translate : Vec2;
 		@param var invScale : Vec2;
-		@param var normalHeightTexture : Sampler2D;
+		@param var heightMap : Sampler2D;
+		@param var terrainHeightTexture : Sampler2D;
+
 
 		var relativePosition : Vec3;
 		var projectedPosition : Vec4;
@@ -127,13 +109,15 @@ class WaterShader extends hxsl.Shader {
 		var waterDepth : Float;
 
 		var waveOffset : Float;
+		var heightMapUV : Vec2;
 
 		function wave(pos : Vec3) : Vec3 {
 			waveOffset = 0.0;
 			@unroll for (i in 0...WAVE_NUMBER) {
 				waveOffset += waveIntensities[i] * sin(dot(pos.xy, vec2(waveVectors[2*i], waveVectors[2*i+1])) + waveFrequencies[i] * global.time);
 			}
-			return pos + saturate(waterDepth / shoreDepth) * vec3(0.0, 0.0, waveOffset);
+			heightMapUV = (transformedPosition.xy - from) / (abs(to) + abs(from));
+			return pos + saturate(waterDepth / shoreDepth) * waveIntensities[0] * length(heightMap.get(heightMapUV));// * vec3(0.0, 0.0, waveOffset);
 		}
 
 		function d(delta : Vec3) : Vec3 {
@@ -145,7 +129,7 @@ class WaterShader extends hxsl.Shader {
 			rotatePos = vec2(rotatePos.x * rotate.x - rotatePos.y * rotate.y, rotatePos.x * rotate.y + rotatePos.y * rotate.x);
 			rotatePos *= invScale;
 			var terrainUV = (rotatePos - from) / (abs(to) + abs(from));
-			var terrainHeightNormal = normalHeightTexture.get(terrainUV).rgba;
+			var terrainHeightNormal = terrainHeightTexture.get(terrainUV).rgba;
 			var terrainHeight = terrainHeightNormal.a;
 			waterDepth = (relativePosition * global.modelView.mat3x4()).z - terrainHeight;
 
@@ -171,6 +155,7 @@ class WaterShader extends hxsl.Shader {
 			transformedNormal = normalize(cross(d(vec3(0.1, 0.0, 0.0)), d(vec3(0.0, 0.1, 0.0))));
 			transformedNormal = mix(vec3(0.0, 0.0, 1.0), transformedNormal, normalStrength);
 			roughness = waterRoughness;
+			pixelColor.rgb = heightMap.get(heightMapUV).rgb;
 		}
 	};
 
@@ -197,6 +182,7 @@ class Water extends hrt.prefab.terrain.Terrain {
 	public var heightMap : h3d.mat.Texture = null;
 
 	var waterShader = new WaterShader();
+	var bakeShader = new WaterBakeShader();
 
 	override function makeInstance( ctx : hrt.prefab.Context ) : hrt.prefab.Context {
 		ctx = super.makeInstance(ctx);
@@ -219,6 +205,8 @@ class Water extends hrt.prefab.terrain.Terrain {
 
 		waterShader.WAVE_NUMBER = waves.length;
 		waterShader.WAVE_NUMBER_BIS = waves.length * 2;
+		bakeShader.WAVE_NUMBER = waves.length;
+		bakeShader.WAVE_NUMBER_BIS = waves.length * 2;
 		var waveIntensities = [];
 		var waveFrequencies = [];
 		var waveVectors = [];
@@ -231,6 +219,9 @@ class Water extends hrt.prefab.terrain.Terrain {
 		waterShader.waveIntensities = waveIntensities;
 		waterShader.waveFrequencies = waveFrequencies;
 		waterShader.waveVectors = waveVectors;
+		bakeShader.waveIntensities = waveIntensities;
+		bakeShader.waveFrequencies = waveFrequencies;
+		bakeShader.waveVectors = waveVectors;
 
 		waterShader.normalStrength = normalStrength;
 
@@ -261,6 +252,7 @@ class Water extends hrt.prefab.terrain.Terrain {
 			ssr.depthTest = LessEqual;
 		}
 		bake();
+		waterShader.heightMap = heightMap;
 	}
 
 	function bake() {
@@ -285,8 +277,8 @@ class Water extends hrt.prefab.terrain.Terrain {
 
 		var engine = h3d.Engine.getCurrent();
 		var output = [Value("heightMap")];
-		var ss = new h3d.pass.ScreenFx(new WaterBakeShader(), output);
-		//ss.shader.tileSize.set(tileSize.x, tileSize.y);
+		var ss = new h3d.pass.ScreenFx(bakeShader, output);
+		//ss.setGlobals();
 		engine.pushTargets([heightMap]);
 		for( t in terrain.tiles ) {
 			ss.shader.from.set(((t.tileX - bounds.x) * (terrain.tileSize.x * heightmapPrecision)) / colorMapWidth, ((t.tileY - bounds.z) * (terrain.tileSize.y * heightmapPrecision)) / colorMapHeight);
@@ -352,7 +344,8 @@ class Water extends hrt.prefab.terrain.Terrain {
 			<div class="group" name="Wave">
 				<dl>
 					<dt>Intensity</dt><dd><input type="range" min="0" max="3" field="intensity"/></dd>
-					<dt>Direction</dt><input field="kx"/><input field="ky"/>
+					<dt>Kx</dt><dd><input type="range" min="0" max="3" field="kx"/></dd>
+					<dt>Ky</dt><dd><input type="range" min="0" max="3" field="ky"/></dd>
 					<dt>Frequency</dt><dd><input type="range" min="0" max="3" field="frequency"/></dd>
 				</dl>
 			</div>

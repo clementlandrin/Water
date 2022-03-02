@@ -1,5 +1,72 @@
 package prefab;
 
+import hxsl.Output;
+
+class WaterBakeShader extends h3d.shader.ScreenShader {
+
+	static var SRC = {
+
+		var heightMap : Vec4;
+
+		@param var tilePos : Vec2;
+		@param var tileSize : Vec2;
+
+		@param var from : Vec2;
+		@param var to : Vec2;
+
+		/*function vertex() {
+			var rotatePos = transformedPosition.xy + translate;
+			rotatePos = vec2(rotatePos.x * rotate.x - rotatePos.y * rotate.y, rotatePos.x * rotate.y + rotatePos.y * rotate.x);
+			rotatePos *= invScale;
+			var terrainUV = (rotatePos - from) / (abs(to) + abs(from));
+			var terrainHeightNormal = normalHeightTexture.get(terrainUV).rgba;
+			var terrainHeight = terrainHeightNormal.a;
+			waterDepth = (relativePosition * global.modelView.mat3x4()).z - terrainHeight;
+
+			transformedPosition.xyz = wave(transformedPosition);
+		}
+
+		function fragment() {
+			var screenPos = projectedPosition.xy / projectedPosition.w;
+			var depth = depthMap.get(screenToUv(screenPos));
+			var ruv = vec4( screenPos, depth, 1 );
+			var ppos = ruv * camera.inverseViewProj;
+			var wpos = ppos.xyz / ppos.w;
+
+			var p0 = 0.0;
+			var p1 = shoreDepth / maxDepth;
+			var p2 = 1.0;
+			var t = saturate(1.0 - waterDepth / maxDepth);
+			var waterColor = mix(deepWaterColor, mix(middleWaterColor, nearWaterColor, smoothstep(p1, p2, t)), smoothstep(p0, p1, t));
+
+			var opacity = mix(0.2, 1.0, pow(1.0 - t, opacityPower));
+
+			pixelColor.rgba = vec4(waterColor, opacity);
+			transformedNormal = normalize(cross(d(vec3(0.1, 0.0, 0.0)), d(vec3(0.0, 0.1, 0.0))));
+			transformedNormal = mix(vec3(0.0, 0.0, 1.0), transformedNormal, normalStrength);
+			roughness = waterRoughness;
+		}*/
+
+		function vertex() {
+			output.position = vec4(uvToScreen(mix(from, to, screenToUv(input.position))), 0, 1);
+			output.position.y *= flipY;
+		}
+
+		function fragment() {
+
+			/*var terrainNormal = unpackNormal(texture(sourceNormal, calculatedUV).rgba);
+			var bitangent = cross(vec3(1, 0, 0), terrainNormal);
+			var tangent = cross(terrainNormal, bitangent);
+			var TBN = mat3(	vec3(tangent.x, bitangent.x, terrainNormal.x),
+							vec3(tangent.y, bitangent.y, terrainNormal.y),
+							vec3(tangent.z, bitangent.z, terrainNormal.z));
+
+			var wSum = w.x + w.y + w.z;*/
+			heightMap = vec4(sin(output.position.x), sin(output.position.y), 0.0 ,1.0);
+		}
+	}
+}
+
 class WaterShader extends hxsl.Shader {
 
 	static var SRC = {
@@ -109,7 +176,8 @@ class WaterShader extends hxsl.Shader {
 
 }
 
-
+@:access(hrt.prefab.terrain.Terrain)
+@:access(hrt.prefab.terrain.TerrainMesh)
 class Water extends hrt.prefab.terrain.Terrain {
 
 	@:s public var nearWaterColor : Int = 0xffffff;
@@ -124,6 +192,9 @@ class Water extends hrt.prefab.terrain.Terrain {
 	@:s public var waves : Array<{intensity : Float, kx : Float, ky : Float, frequency : Float}> = [{intensity : 1.0, kx : 1.0, ky : 0.0, frequency : 1.0}];
 
 	@:s public var shoreDepth : Float = 1.0;
+
+	@:s public var heightmapPrecision : Int = 1;
+	public var heightMap : h3d.mat.Texture = null;
 
 	var waterShader = new WaterShader();
 
@@ -189,6 +260,40 @@ class Water extends hrt.prefab.terrain.Terrain {
 			ssr.depthWrite = false;
 			ssr.depthTest = LessEqual;
 		}
+		bake();
+	}
+
+	function bake() {
+
+		if( heightMap != null )
+			heightMap.dispose();
+
+		var bounds = new h3d.Vector();
+		for( t in terrain.tiles ) {
+			bounds.x = hxd.Math.min(bounds.x, t.tileX);
+			bounds.y = hxd.Math.max(bounds.y, t.tileX + 1);
+			bounds.z = hxd.Math.min(bounds.z, t.tileY);
+			bounds.w = hxd.Math.max(bounds.w, t.tileY + 1);
+		}
+
+		var width = Std.int(hxd.Math.abs(bounds.x) + hxd.Math.abs(bounds.y));
+		var height = Std.int(hxd.Math.abs(bounds.z) + hxd.Math.abs(bounds.w));
+
+		var colorMapWidth = Std.int(width * terrain.tileSize.x * heightmapPrecision);
+		var colorMapHeight = Std.int(height * terrain.tileSize.y * heightmapPrecision);
+		heightMap = new h3d.mat.Texture(colorMapWidth, colorMapHeight, [Target]);
+
+		var engine = h3d.Engine.getCurrent();
+		var output = [Value("heightMap")];
+		var ss = new h3d.pass.ScreenFx(new WaterBakeShader(), output);
+		//ss.shader.tileSize.set(tileSize.x, tileSize.y);
+		engine.pushTargets([heightMap]);
+		for( t in terrain.tiles ) {
+			ss.shader.from.set(((t.tileX - bounds.x) * (terrain.tileSize.x * heightmapPrecision)) / colorMapWidth, ((t.tileY - bounds.z) * (terrain.tileSize.y * heightmapPrecision)) / colorMapHeight);
+			ss.shader.to.set(ss.shader.from.x + (terrain.tileSize.x * heightmapPrecision) / colorMapWidth, ss.shader.from.y + (terrain.tileSize.y * heightmapPrecision) / colorMapHeight);
+			ss.render();
+		}
+		engine.popTarget();
 	}
 
 	#if editor
@@ -202,9 +307,9 @@ class Water extends hrt.prefab.terrain.Terrain {
 		var ctx = ectx.getContext(this);
 
 		var e1 = new hide.Element('
-		<div class="group" name="Surface">
+		<div class="group" name="Heightmap">
 			<dl>
-				<dt>Cells</dt><dd><input type="range" min="1" max="100" step="1" field="cellCount"/></dd>
+				<dt>Precision</dt><dd><input type="range" min="1" max="100" step="1" field="heightmapPrecision"/></dd>
 			</dl>
 		</div>
 		<div class="group" name="Color">

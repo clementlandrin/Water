@@ -2,12 +2,19 @@ import h3d.scene.*;
 
 class Game extends hxd.App {
 
+	public static var inst : Game;
+
 	var fui : h2d.Flow;
 
-	var time : Float = 0.;
+	public var time : Float = 0.;
 	var obj1 : Mesh;
 	var obj2 : Mesh;
 	var rootCtx : hrt.prefab.Context;
+
+	public function new() {
+		inst = this;
+		super();
+	}
 
 	override function init() {
 		// initialize embeded ressources
@@ -145,7 +152,7 @@ class Game extends hxd.App {
 	override function update( dt : Float ) {
 
 		// time is flying...
-		time += 0.6 * dt;
+		time += dt;
 
 		// move the camera position around the two cubes
 		//var dist = 50;

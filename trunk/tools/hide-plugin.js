@@ -199,6 +199,908 @@ js.node.zlib.InflateRaw = require("zlib").InflateRaw;
 js.node.zlib.Unzip = require("zlib").Unzip;
 var prefab = prefab || {};
 if(!prefab.terrain) prefab.terrain = {};
+prefab.terrain.TerrainBlendShadowPass = $hxClasses["prefab.terrain.TerrainBlendShadowPass"] = function() {
+	hxsl.Shader.call(this);
+};
+prefab.terrain.TerrainBlendShadowPass.__name__ = "prefab.terrain.TerrainBlendShadowPass";
+prefab.terrain.TerrainBlendShadowPass._SHADER = null;
+prefab.terrain.TerrainBlendShadowPass.__super__ = hxsl.Shader;
+prefab.terrain.TerrainBlendShadowPass.prototype = $extend(hxsl.Shader.prototype,{
+	updateConstants: function(globals) {
+		this.constBits = 0;
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		return null;
+	}
+	,getParamFloatValue: function(index) {
+		return 0.;
+	}
+	,setParamIndexValue: function(index,val) {
+	}
+	,setParamIndexFloatValue: function(index,val) {
+	}
+	,__class__: prefab.terrain.TerrainBlendShadowPass
+});
+prefab.TerrainAlphaBlend = $hxClasses["prefab.TerrainAlphaBlend"] = function(parent) {
+	this.DEBUG = false;
+	this.discardThreshold = 0.25;
+	this.range = 0.25;
+	hrt.prefab.Shader.call(this,parent);
+};
+prefab.TerrainAlphaBlend.__name__ = "prefab.TerrainAlphaBlend";
+prefab.TerrainAlphaBlend.__super__ = hrt.prefab.Shader;
+prefab.TerrainAlphaBlend.prototype = $extend(hrt.prefab.Shader.prototype,{
+	range: null
+	,discardThreshold: null
+	,DEBUG: null
+	,makeInstance: function(ctx) {
+		var ctx1 = hrt.prefab.Shader.prototype.makeInstance.call(this,ctx);
+		var _g = 0;
+		var _g1 = ctx1.local3d.getMaterials();
+		while(_g < _g1.length) {
+			var m = _g1[_g];
+			++_g;
+			m.passes.setBlendMode(h2d.BlendMode.Alpha);
+		}
+		return ctx1;
+	}
+	,makeShader: function(ctx) {
+		var t = ctx.local3d.getScene().find(function(o) {
+			if(((o) instanceof prefab.terrain.TerrainMesh)) {
+				return o;
+			} else {
+				return null;
+			}
+		});
+		if(t != null) {
+			var terrain = t;
+			var s = new prefab.terrain.TerrainBlend();
+			terrain.syncTerrainAlphaBlendShader(s);
+			return s;
+		}
+		return new prefab.terrain.TerrainBlend();
+	}
+	,applyShader: function(obj,material,shader) {
+		hrt.prefab.Shader.prototype.applyShader.call(this,obj,material,shader);
+		var sh = material.getPass("shadow");
+		if(sh != null) {
+			sh.addShader(prefab.TerrainAlphaBlend.terrainBlendShadowPass);
+		}
+	}
+	,syncShaderVars: function(shader,shaderDef) {
+		hrt.prefab.Shader.prototype.syncShaderVars.call(this,shader,shaderDef);
+		var s = shader;
+		s.range__ = this.range;
+		s.constModified = true;
+		s.DEBUG__ = this.DEBUG;
+	}
+	,getHideProps: function() {
+		return { icon : "cog", name : "TerrainAlphaBlend", allowParent : function(p) {
+			if(!(p.to(hrt.prefab.Object2D) != null || p.to(hrt.prefab.Object3D) != null)) {
+				return p.to(hrt.prefab.Material) != null;
+			} else {
+				return true;
+			}
+		}};
+	}
+	,edit: function(ctx) {
+		var _gthis = this;
+		var group = $("\r\n\t\t\t<div class=\"group\" name=\"Terrain Alpha Blend\">\r\n\t\t\t\t<dl>\r\n\t\t\t\t\t<dt>Range</dt><dd><input type=\"range\" min=\"0\" max=\"1\" field=\"range\"/></dd>\r\n\t\t\t\t</dl>\r\n\t\t\t</div>\r\n\t\t\t<div class=\"group\" name=\"Debug\">\r\n\t\t\t\t<dl>\r\n\t\t\t\t\t<dt>Debug</dt><dd><input type=\"checkbox\" field=\"DEBUG\"/></dd>\r\n\t\t\t\t</dl>\r\n\t\t\t</div>\r\n\t\t");
+		var props = ctx.properties.add(group,this,function(pname) {
+			ctx.onChange(_gthis,pname);
+		});
+	}
+	,saveSerializedFields: function(obj) {
+		hrt.prefab.Shader.prototype.saveSerializedFields.call(this,obj);
+		if(this.range != 0.25) {
+			obj.range = this.range;
+		}
+		if(this.discardThreshold != 0.25) {
+			obj.discardThreshold = this.discardThreshold;
+		}
+	}
+	,loadSerializedFields: function(obj) {
+		hrt.prefab.Shader.prototype.loadSerializedFields.call(this,obj);
+		this.range = obj.range == null ? 0.25 : obj.range;
+		this.discardThreshold = obj.discardThreshold == null ? 0.25 : obj.discardThreshold;
+	}
+	,copySerializedFields: function(p) {
+		hrt.prefab.Shader.prototype.copySerializedFields.call(this,p);
+		var p1 = p;
+		this.range = p1.range;
+		this.discardThreshold = p1.discardThreshold;
+	}
+	,__class__: prefab.TerrainAlphaBlend
+});
+prefab.WaterShader = $hxClasses["prefab.WaterShader"] = function() {
+	this.invScale__ = new h3d.Vector();
+	this.translate__ = new h3d.Vector();
+	this.rotate__ = new h3d.Vector();
+	this.to__ = new h3d.Vector();
+	this.from__ = new h3d.Vector();
+	this.shoreDepth__ = 0;
+	this.maxDepth__ = 0;
+	this.opacityPower__ = 0;
+	this.waterRoughness__ = 0;
+	this.deepWaterColor__ = new h3d.Vector();
+	this.middleWaterColor__ = new h3d.Vector();
+	this.nearWaterColor__ = new h3d.Vector();
+	hxsl.Shader.call(this);
+};
+prefab.WaterShader.__name__ = "prefab.WaterShader";
+prefab.WaterShader._SHADER = null;
+prefab.WaterShader.__super__ = hxsl.Shader;
+prefab.WaterShader.prototype = $extend(hxsl.Shader.prototype,{
+	nearWaterColor__: null
+	,get_nearWaterColor: function() {
+		return this.nearWaterColor__;
+	}
+	,set_nearWaterColor: function(_v) {
+		return this.nearWaterColor__ = _v;
+	}
+	,middleWaterColor__: null
+	,get_middleWaterColor: function() {
+		return this.middleWaterColor__;
+	}
+	,set_middleWaterColor: function(_v) {
+		return this.middleWaterColor__ = _v;
+	}
+	,deepWaterColor__: null
+	,get_deepWaterColor: function() {
+		return this.deepWaterColor__;
+	}
+	,set_deepWaterColor: function(_v) {
+		return this.deepWaterColor__ = _v;
+	}
+	,waterRoughness__: null
+	,get_waterRoughness: function() {
+		return this.waterRoughness__;
+	}
+	,set_waterRoughness: function(_v) {
+		return this.waterRoughness__ = _v;
+	}
+	,opacityPower__: null
+	,get_opacityPower: function() {
+		return this.opacityPower__;
+	}
+	,set_opacityPower: function(_v) {
+		return this.opacityPower__ = _v;
+	}
+	,maxDepth__: null
+	,get_maxDepth: function() {
+		return this.maxDepth__;
+	}
+	,set_maxDepth: function(_v) {
+		return this.maxDepth__ = _v;
+	}
+	,shoreDepth__: null
+	,get_shoreDepth: function() {
+		return this.shoreDepth__;
+	}
+	,set_shoreDepth: function(_v) {
+		return this.shoreDepth__ = _v;
+	}
+	,from__: null
+	,get_from: function() {
+		return this.from__;
+	}
+	,set_from: function(_v) {
+		return this.from__ = _v;
+	}
+	,to__: null
+	,get_to: function() {
+		return this.to__;
+	}
+	,set_to: function(_v) {
+		return this.to__ = _v;
+	}
+	,rotate__: null
+	,get_rotate: function() {
+		return this.rotate__;
+	}
+	,set_rotate: function(_v) {
+		return this.rotate__ = _v;
+	}
+	,translate__: null
+	,get_translate: function() {
+		return this.translate__;
+	}
+	,set_translate: function(_v) {
+		return this.translate__ = _v;
+	}
+	,invScale__: null
+	,get_invScale: function() {
+		return this.invScale__;
+	}
+	,set_invScale: function(_v) {
+		return this.invScale__ = _v;
+	}
+	,heightMap__: null
+	,get_heightMap: function() {
+		return this.heightMap__;
+	}
+	,set_heightMap: function(_v) {
+		return this.heightMap__ = _v;
+	}
+	,terrainHeightTexture__: null
+	,get_terrainHeightTexture: function() {
+		return this.terrainHeightTexture__;
+	}
+	,set_terrainHeightTexture: function(_v) {
+		return this.terrainHeightTexture__ = _v;
+	}
+	,updateConstants: function(globals) {
+		this.constBits = 0;
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		switch(index) {
+		case 0:
+			return this.nearWaterColor__;
+		case 1:
+			return this.middleWaterColor__;
+		case 2:
+			return this.deepWaterColor__;
+		case 3:
+			return this.waterRoughness__;
+		case 4:
+			return this.opacityPower__;
+		case 5:
+			return this.maxDepth__;
+		case 6:
+			return this.shoreDepth__;
+		case 7:
+			return this.from__;
+		case 8:
+			return this.to__;
+		case 9:
+			return this.rotate__;
+		case 10:
+			return this.translate__;
+		case 11:
+			return this.invScale__;
+		case 12:
+			return this.heightMap__;
+		case 13:
+			return this.terrainHeightTexture__;
+		default:
+		}
+		return null;
+	}
+	,getParamFloatValue: function(index) {
+		switch(index) {
+		case 3:
+			return this.waterRoughness__;
+		case 4:
+			return this.opacityPower__;
+		case 5:
+			return this.maxDepth__;
+		case 6:
+			return this.shoreDepth__;
+		default:
+		}
+		return 0.;
+	}
+	,setParamIndexValue: function(index,val) {
+		switch(index) {
+		case 0:
+			this.nearWaterColor__ = val;
+			break;
+		case 1:
+			this.middleWaterColor__ = val;
+			break;
+		case 2:
+			this.deepWaterColor__ = val;
+			break;
+		case 3:
+			this.waterRoughness__ = val;
+			break;
+		case 4:
+			this.opacityPower__ = val;
+			break;
+		case 5:
+			this.maxDepth__ = val;
+			break;
+		case 6:
+			this.shoreDepth__ = val;
+			break;
+		case 7:
+			this.from__ = val;
+			break;
+		case 8:
+			this.to__ = val;
+			break;
+		case 9:
+			this.rotate__ = val;
+			break;
+		case 10:
+			this.translate__ = val;
+			break;
+		case 11:
+			this.invScale__ = val;
+			break;
+		case 12:
+			this.heightMap__ = val;
+			break;
+		case 13:
+			this.terrainHeightTexture__ = val;
+			break;
+		default:
+		}
+	}
+	,setParamIndexFloatValue: function(index,val) {
+		switch(index) {
+		case 3:
+			this.waterRoughness__ = val;
+			break;
+		case 4:
+			this.opacityPower__ = val;
+			break;
+		case 5:
+			this.maxDepth__ = val;
+			break;
+		case 6:
+			this.shoreDepth__ = val;
+			break;
+		default:
+		}
+	}
+	,clone: function() {
+		var s = Object.create(prefab.WaterShader.prototype);
+		s.shader = this.shader;
+		s.nearWaterColor__ = this.nearWaterColor__;
+		s.middleWaterColor__ = this.middleWaterColor__;
+		s.deepWaterColor__ = this.deepWaterColor__;
+		s.waterRoughness__ = this.waterRoughness__;
+		s.opacityPower__ = this.opacityPower__;
+		s.maxDepth__ = this.maxDepth__;
+		s.shoreDepth__ = this.shoreDepth__;
+		s.from__ = this.from__;
+		s.to__ = this.to__;
+		s.rotate__ = this.rotate__;
+		s.translate__ = this.translate__;
+		s.invScale__ = this.invScale__;
+		s.heightMap__ = this.heightMap__;
+		s.terrainHeightTexture__ = this.terrainHeightTexture__;
+		return s;
+	}
+	,__class__: prefab.WaterShader
+	,__properties__: {set_terrainHeightTexture:"set_terrainHeightTexture",get_terrainHeightTexture:"get_terrainHeightTexture",set_heightMap:"set_heightMap",get_heightMap:"get_heightMap",set_invScale:"set_invScale",get_invScale:"get_invScale",set_translate:"set_translate",get_translate:"get_translate",set_rotate:"set_rotate",get_rotate:"get_rotate",set_to:"set_to",get_to:"get_to",set_from:"set_from",get_from:"get_from",set_shoreDepth:"set_shoreDepth",get_shoreDepth:"get_shoreDepth",set_maxDepth:"set_maxDepth",get_maxDepth:"get_maxDepth",set_opacityPower:"set_opacityPower",get_opacityPower:"get_opacityPower",set_waterRoughness:"set_waterRoughness",get_waterRoughness:"get_waterRoughness",set_deepWaterColor:"set_deepWaterColor",get_deepWaterColor:"get_deepWaterColor",set_middleWaterColor:"set_middleWaterColor",get_middleWaterColor:"get_middleWaterColor",set_nearWaterColor:"set_nearWaterColor",get_nearWaterColor:"get_nearWaterColor"}
+});
+prefab.Water = $hxClasses["prefab.Water"] = function(parent) {
+	this.waterShader = new prefab.WaterShader();
+	this.heightMap = null;
+	this.heightmapPrecision = 1;
+	this.shoreDepth = 1.0;
+	this.waves = [{ intensity : 1.0, kx : 1.0, ky : 0.0, frequency : 1.0}];
+	this.normalStrength = 1.0;
+	this.maxDepth = 5.0;
+	this.opacityPower = 5.0;
+	this.roughness = 0.0;
+	this.deepWaterColor = 16777215;
+	this.middleWaterColor = 16777215;
+	this.nearWaterColor = 16777215;
+	hrt.prefab.terrain.Terrain.call(this,parent);
+};
+prefab.Water.__name__ = "prefab.Water";
+prefab.Water.__super__ = hrt.prefab.terrain.Terrain;
+prefab.Water.prototype = $extend(hrt.prefab.terrain.Terrain.prototype,{
+	nearWaterColor: null
+	,middleWaterColor: null
+	,deepWaterColor: null
+	,roughness: null
+	,opacityPower: null
+	,maxDepth: null
+	,normalStrength: null
+	,waves: null
+	,shoreDepth: null
+	,heightmapPrecision: null
+	,heightMap: null
+	,waterShader: null
+	,createTerrain: function(ctx) {
+		var t = new prefab.WaterMesh(ctx.local3d);
+		t.waterShader = this.waterShader;
+		return t;
+	}
+	,makeInstance: function(ctx) {
+		ctx = hrt.prefab.terrain.Terrain.prototype.makeInstance.call(this,ctx);
+		return ctx;
+	}
+	,updateInstance: function(ctx,propName) {
+		hrt.prefab.terrain.Terrain.prototype.updateInstance.call(this,ctx);
+		var waterMesh = this.terrain;
+		var c = this.nearWaterColor;
+		var s = 0.00392156862745098;
+		this.waterShader.nearWaterColor__ = new h3d.Vector((c >> 16 & 255) * s,(c >> 8 & 255) * s,(c & 255) * s,(c >>> 24) * s);
+		var c = this.middleWaterColor;
+		var s = 0.00392156862745098;
+		this.waterShader.middleWaterColor__ = new h3d.Vector((c >> 16 & 255) * s,(c >> 8 & 255) * s,(c & 255) * s,(c >>> 24) * s);
+		var c = this.deepWaterColor;
+		var s = 0.00392156862745098;
+		this.waterShader.deepWaterColor__ = new h3d.Vector((c >> 16 & 255) * s,(c >> 8 & 255) * s,(c & 255) * s,(c >>> 24) * s);
+		this.waterShader.waterRoughness__ = this.roughness;
+		this.waterShader.opacityPower__ = this.opacityPower;
+		this.waterShader.maxDepth__ = this.maxDepth;
+		this.waterShader.shoreDepth__ = this.shoreDepth;
+		var waveIntensities = [];
+		var waveFrequencies = [];
+		var waveVectors = [];
+		var _g = 0;
+		var _g1 = this.waves;
+		while(_g < _g1.length) {
+			var wave = _g1[_g];
+			++_g;
+			waveIntensities.push(wave.intensity);
+			waveFrequencies.push(wave.frequency);
+			waveVectors.push(wave.kx);
+			waveVectors.push(wave.ky);
+		}
+		var _this = waterMesh.waterBakeShader;
+		_this.constModified = true;
+		_this.WAVE_NUMBER__ = this.waves.length;
+		var _this = waterMesh.waterBakeShader;
+		_this.constModified = true;
+		_this.WAVE_NUMBER_BIS__ = this.waves.length * 2;
+		waterMesh.waterBakeShader.waveIntensities__ = waveIntensities;
+		waterMesh.waterBakeShader.waveFrequencies__ = waveFrequencies;
+		waterMesh.waterBakeShader.waveVectors__ = waveVectors;
+		this.waterShader.heightMap__ = waterMesh.heightMap;
+	}
+	,loadTiles: function(ctx) {
+		hrt.prefab.terrain.Terrain.prototype.loadTiles.call(this,ctx);
+		var _g = 0;
+		var _g1 = this.terrain.tiles;
+		while(_g < _g1.length) {
+			var t = _g1[_g];
+			++_g;
+			t.material.passes.setPassName("decal");
+			t.material.passes.setBlendMode(h2d.BlendMode.None);
+			t.material.passes.set_depthWrite(true);
+			t.material.passes.set_culling(h3d.mat.Face.None);
+			var terrainShader = t.material.passes.getShader(hrt.shader.Terrain);
+			if(terrainShader != null) {
+				t.material.passes.removeShader(terrainShader);
+			}
+			var shader = t.material.passes.getShader(prefab.WaterShader);
+			if(shader == null) {
+				t.material.passes.addShader(this.waterShader);
+			}
+			shader = t.material.passes.getShader(h3d.shader.pbr.StrengthValues);
+			if(shader == null) {
+				t.material.passes.addShader(new h3d.shader.pbr.StrengthValues());
+			}
+			var ssr = t.material.allocPass("ssr",true);
+			ssr.setBlendMode(h2d.BlendMode.Alpha);
+			ssr.set_depthWrite(false);
+			ssr.set_depthTest(h3d.mat.Compare.LessEqual);
+		}
+		var waterMesh = this.terrain;
+		waterMesh.resize();
+	}
+	,getHideProps: function() {
+		return { icon : "square", name : "Water"};
+	}
+	,edit: function(ectx) {
+		var _gthis = this;
+		hrt.prefab.terrain.Terrain.prototype.edit.call(this,ectx);
+		var ctx = ectx.getContext(this);
+		var e1 = $("\r\n\t\t<div class=\"group\" name=\"Heightmap\">\r\n\t\t\t<dl>\r\n\t\t\t\t<dt>Precision</dt><dd><input type=\"range\" min=\"1\" max=\"100\" step=\"1\" field=\"heightmapPrecision\"/></dd>\r\n\t\t\t</dl>\r\n\t\t</div>\r\n\t\t<div class=\"group\" name=\"Color\">\r\n\t\t\t<dl>\r\n\t\t\t\t<dt>Near Water Color </dt><dd><input type=\"color\" field=\"nearWaterColor\"/></dd>\r\n\t\t\t\t<dt>Middle Water Color</dt><dd><input type=\"color\" field=\"middleWaterColor\"/></dd>\r\n\t\t\t\t<dt>Deep Water Color</dt><dd><input type=\"color\" field=\"deepWaterColor\"/></dd>\r\n\t\t\t\t<dt>Roughness</dt><dd><input type=\"range\" min=\"0\" max=\"1\" field=\"roughness\"/></dd>\r\n\t\t\t\t<dt>Opacity Power</dt><dd><input type=\"range\" min=\"0\" max=\"5\" field=\"opacityPower\"/></dd>\r\n\t\t\t\t<dt>Lake max depth</dt><dd><input type=\"range\" min=\"0\" max=\"4\" field=\"maxDepth\"/></dd>\r\n\t\t\t</dl>\r\n\t\t</div>\r\n\t\t<div class=\"group\" name=\"Color Noise\">\r\n\t\t\t<dl>\r\n\t\t\t\t<dt>Texture</dt><dd><input type=\"texturepath\" field=\"colorNoiseTexture\"/></dd>\r\n\t\t\t\t<dt>Scale</dt><dd><input type=\"range\" min=\"0\" max =\"1\" step=\"0.01\" field=\"colorNoiseScale\"/></dd>\r\n\t\t\t\t<dt>Strength</dt><dd><input type=\"range\" min=\"0\" max =\"1\" step=\"0.01\" field=\"colorNoiseStrength\"/></dd>\r\n\t\t\t</dl>\r\n\t\t</div>\r\n\t\t<div class=\"group\" name=\"Shore\">\r\n\t\t\t<dl>\r\n\t\t\t\t<dt>Shore depth</dt><dd><input type=\"range\" min=\"0\" max=\"10\" field=\"shoreDepth\"/></dd>\r\n\t\t\t</dl>\r\n\t\t</div>\r\n\t\t<dt>Normal strength</dt><dd><input type=\"range\" min=\"0\" max=\"1\" field=\"normalStrength\"/></dd>\r\n\t\t<div class=\"group\" name=\"Waves\">\r\n\t\t\t<dl>\r\n\t\t\t<ul id=\"wave\"></ul>\r\n\t\t\t</dl>\r\n\t\t</div>\r\n\t\t");
+		ectx.properties.add(e1,this,function(pname) {
+			ectx.onChange(_gthis,pname);
+		});
+		var list = e1.find("ul#wave");
+		ectx.properties.add(e1,this,function(_) {
+			_gthis.updateInstance(ctx);
+		});
+		var _g = 0;
+		var _g1 = this.waves;
+		while(_g < _g1.length) {
+			var wave = _g1[_g];
+			++_g;
+			var e = $("\r\n\t\t\t<div class=\"group\" name=\"Wave\">\r\n\t\t\t\t<dl>\r\n\t\t\t\t\t<dt>Intensity</dt><dd><input type=\"range\" min=\"0\" max=\"3\" field=\"intensity\"/></dd>\r\n\t\t\t\t\t<dt>Kx</dt><dd><input type=\"range\" min=\"0\" max=\"3\" field=\"kx\"/></dd>\r\n\t\t\t\t\t<dt>Ky</dt><dd><input type=\"range\" min=\"0\" max=\"3\" field=\"ky\"/></dd>\r\n\t\t\t\t\t<dt>Frequency</dt><dd><input type=\"range\" min=\"0\" max=\"3\" field=\"frequency\"/></dd>\r\n\t\t\t\t</dl>\r\n\t\t\t</div>\r\n\t\t\t");
+			e.appendTo(list);
+			ectx.properties.build(e,wave,function(pname) {
+				_gthis.updateInstance(ctx,pname);
+			});
+		}
+		var add = $("<li><p><a href=\"#\">[+]</a></p></li>");
+		add.appendTo(list);
+		add.find("a").click(function(_) {
+			_gthis.waves.push({ intensity : 1.0, kx : 1.0, ky : 0.0, frequency : 1.0});
+			ectx.rebuildProperties();
+		});
+		var sub = $("<li><p><a href=\"#\">[-]</a></p></li>");
+		sub.appendTo(list);
+		sub.find("a").click(function(_) {
+			if(_gthis.waves.length > 1) {
+				_gthis.waves.pop();
+			}
+			ectx.rebuildProperties();
+		});
+	}
+	,saveSerializedFields: function(obj) {
+		hrt.prefab.terrain.Terrain.prototype.saveSerializedFields.call(this,obj);
+		if(this.nearWaterColor != 16777215) {
+			obj.nearWaterColor = this.nearWaterColor;
+		}
+		if(this.middleWaterColor != 16777215) {
+			obj.middleWaterColor = this.middleWaterColor;
+		}
+		if(this.deepWaterColor != 16777215) {
+			obj.deepWaterColor = this.deepWaterColor;
+		}
+		if(this.roughness != 0.0) {
+			obj.roughness = this.roughness;
+		}
+		if(this.opacityPower != 5.0) {
+			obj.opacityPower = this.opacityPower;
+		}
+		if(this.maxDepth != 5.0) {
+			obj.maxDepth = this.maxDepth;
+		}
+		if(this.normalStrength != 1.0) {
+			obj.normalStrength = this.normalStrength;
+		}
+		if(this.waves != null) {
+			obj.waves = this.waves;
+		}
+		if(this.shoreDepth != 1.0) {
+			obj.shoreDepth = this.shoreDepth;
+		}
+		if(this.heightmapPrecision != 1) {
+			obj.heightmapPrecision = this.heightmapPrecision;
+		}
+	}
+	,loadSerializedFields: function(obj) {
+		hrt.prefab.terrain.Terrain.prototype.loadSerializedFields.call(this,obj);
+		this.nearWaterColor = obj.nearWaterColor == null ? 16777215 : obj.nearWaterColor;
+		this.middleWaterColor = obj.middleWaterColor == null ? 16777215 : obj.middleWaterColor;
+		this.deepWaterColor = obj.deepWaterColor == null ? 16777215 : obj.deepWaterColor;
+		this.roughness = obj.roughness == null ? 0.0 : obj.roughness;
+		this.opacityPower = obj.opacityPower == null ? 5.0 : obj.opacityPower;
+		this.maxDepth = obj.maxDepth == null ? 5.0 : obj.maxDepth;
+		this.normalStrength = obj.normalStrength == null ? 1.0 : obj.normalStrength;
+		this.waves = obj.waves == null ? [{ intensity : 1.0, kx : 1.0, ky : 0.0, frequency : 1.0}] : obj.waves;
+		this.shoreDepth = obj.shoreDepth == null ? 1.0 : obj.shoreDepth;
+		this.heightmapPrecision = obj.heightmapPrecision == null ? 1 : obj.heightmapPrecision;
+	}
+	,copySerializedFields: function(p) {
+		hrt.prefab.terrain.Terrain.prototype.copySerializedFields.call(this,p);
+		var p1 = p;
+		this.nearWaterColor = p1.nearWaterColor;
+		this.middleWaterColor = p1.middleWaterColor;
+		this.deepWaterColor = p1.deepWaterColor;
+		this.roughness = p1.roughness;
+		this.opacityPower = p1.opacityPower;
+		this.maxDepth = p1.maxDepth;
+		this.normalStrength = p1.normalStrength;
+		this.waves = p1.waves;
+		this.shoreDepth = p1.shoreDepth;
+		this.heightmapPrecision = p1.heightmapPrecision;
+	}
+	,__class__: prefab.Water
+});
+prefab.WaterBakeShader = $hxClasses["prefab.WaterBakeShader"] = function() {
+	this.waveVectors__ = [];
+	this.waveFrequencies__ = [];
+	this.waveIntensities__ = [];
+	this.WAVE_NUMBER_BIS__ = 0;
+	this.WAVE_NUMBER__ = 0;
+	this.to__ = new h3d.Vector();
+	this.from__ = new h3d.Vector();
+	this.time__ = 0;
+	h3d.shader.ScreenShader.call(this);
+};
+prefab.WaterBakeShader.__name__ = "prefab.WaterBakeShader";
+prefab.WaterBakeShader._SHADER = null;
+prefab.WaterBakeShader.__super__ = h3d.shader.ScreenShader;
+prefab.WaterBakeShader.prototype = $extend(h3d.shader.ScreenShader.prototype,{
+	time__: null
+	,get_time: function() {
+		return this.time__;
+	}
+	,set_time: function(_v) {
+		return this.time__ = _v;
+	}
+	,from__: null
+	,get_from: function() {
+		return this.from__;
+	}
+	,set_from: function(_v) {
+		return this.from__ = _v;
+	}
+	,to__: null
+	,get_to: function() {
+		return this.to__;
+	}
+	,set_to: function(_v) {
+		return this.to__ = _v;
+	}
+	,WAVE_NUMBER__: null
+	,get_WAVE_NUMBER: function() {
+		return this.WAVE_NUMBER__;
+	}
+	,set_WAVE_NUMBER: function(_v) {
+		this.constModified = true;
+		return this.WAVE_NUMBER__ = _v;
+	}
+	,WAVE_NUMBER_BIS__: null
+	,get_WAVE_NUMBER_BIS: function() {
+		return this.WAVE_NUMBER_BIS__;
+	}
+	,set_WAVE_NUMBER_BIS: function(_v) {
+		this.constModified = true;
+		return this.WAVE_NUMBER_BIS__ = _v;
+	}
+	,waveIntensities__: null
+	,get_waveIntensities: function() {
+		return this.waveIntensities__;
+	}
+	,set_waveIntensities: function(_v) {
+		return this.waveIntensities__ = _v;
+	}
+	,waveFrequencies__: null
+	,get_waveFrequencies: function() {
+		return this.waveFrequencies__;
+	}
+	,set_waveFrequencies: function(_v) {
+		return this.waveFrequencies__ = _v;
+	}
+	,waveVectors__: null
+	,get_waveVectors: function() {
+		return this.waveVectors__;
+	}
+	,set_waveVectors: function(_v) {
+		return this.waveVectors__ = _v;
+	}
+	,updateConstants: function(globals) {
+		this.constBits = 0;
+		var v = this.WAVE_NUMBER__;
+		if(v >>> 8 != 0) {
+			throw haxe.Exception.thrown("WAVE_NUMBER" + " is out of range " + v + ">" + 255);
+		}
+		this.constBits |= v;
+		var v = this.WAVE_NUMBER_BIS__;
+		if(v >>> 8 != 0) {
+			throw haxe.Exception.thrown("WAVE_NUMBER_BIS" + " is out of range " + v + ">" + 255);
+		}
+		this.constBits |= v << 8;
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		switch(index) {
+		case 0:
+			return this.flipY__;
+		case 1:
+			return this.time__;
+		case 2:
+			return this.from__;
+		case 3:
+			return this.to__;
+		case 4:
+			return this.WAVE_NUMBER__;
+		case 5:
+			return this.WAVE_NUMBER_BIS__;
+		case 6:
+			return this.waveIntensities__;
+		case 7:
+			return this.waveFrequencies__;
+		case 8:
+			return this.waveVectors__;
+		default:
+		}
+		return null;
+	}
+	,getParamFloatValue: function(index) {
+		switch(index) {
+		case 0:
+			return this.flipY__;
+		case 1:
+			return this.time__;
+		default:
+		}
+		return 0.;
+	}
+	,clone: function() {
+		var s = Object.create(prefab.WaterBakeShader.prototype);
+		s.shader = this.shader;
+		s.flipY__ = this.flipY__;
+		s.time__ = this.time__;
+		s.from__ = this.from__;
+		s.to__ = this.to__;
+		s.WAVE_NUMBER__ = this.WAVE_NUMBER__;
+		s.WAVE_NUMBER_BIS__ = this.WAVE_NUMBER_BIS__;
+		s.waveIntensities__ = this.waveIntensities__;
+		s.waveFrequencies__ = this.waveFrequencies__;
+		s.waveVectors__ = this.waveVectors__;
+		return s;
+	}
+	,__class__: prefab.WaterBakeShader
+	,__properties__: $extend(h3d.shader.ScreenShader.prototype.__properties__,{set_waveVectors:"set_waveVectors",get_waveVectors:"get_waveVectors",set_waveFrequencies:"set_waveFrequencies",get_waveFrequencies:"get_waveFrequencies",set_waveIntensities:"set_waveIntensities",get_waveIntensities:"get_waveIntensities",set_WAVE_NUMBER_BIS:"set_WAVE_NUMBER_BIS",get_WAVE_NUMBER_BIS:"get_WAVE_NUMBER_BIS",set_WAVE_NUMBER:"set_WAVE_NUMBER",get_WAVE_NUMBER:"get_WAVE_NUMBER",set_to:"set_to",get_to:"get_to",set_from:"set_from",get_from:"get_from",set_time:"set_time",get_time:"get_time"})
+});
+prefab.WaterMesh = $hxClasses["prefab.WaterMesh"] = function(parent) {
+	this.colorMapHeight = 128;
+	this.colorMapWidth = 128;
+	this.waterBakeShader = new prefab.WaterBakeShader();
+	this.waterShader = null;
+	this.bounds = new h3d.Vector();
+	this.fromTo = new h3d.Vector();
+	this.pixelPerUnit = 4;
+	hrt.prefab.terrain.TerrainMesh.call(this,parent);
+};
+prefab.WaterMesh.__name__ = "prefab.WaterMesh";
+prefab.WaterMesh.__super__ = hrt.prefab.terrain.TerrainMesh;
+prefab.WaterMesh.prototype = $extend(hrt.prefab.terrain.TerrainMesh.prototype,{
+	pixelPerUnit: null
+	,heightMap: null
+	,fromTo: null
+	,bounds: null
+	,waterShader: null
+	,waterBakeShader: null
+	,colorMapWidth: null
+	,colorMapHeight: null
+	,resize: function() {
+		if(this.heightMap != null) {
+			this.heightMap.dispose();
+		}
+		this.updateBounds();
+		this.bounds.x = this.bounds.y = this.bounds.z = this.bounds.w = 0.0;
+		var _g = 0;
+		var _g1 = this.tiles;
+		while(_g < _g1.length) {
+			var t = _g1[_g];
+			++_g;
+			var a = this.bounds.x;
+			var b = t.tileX;
+			this.bounds.x = a > b ? b : a;
+			var a1 = this.bounds.y;
+			var b1 = t.tileX + 1;
+			this.bounds.y = a1 < b1 ? b1 : a1;
+			var a2 = this.bounds.z;
+			var b2 = t.tileY;
+			this.bounds.z = a2 > b2 ? b2 : a2;
+			var a3 = this.bounds.w;
+			var b3 = t.tileY + 1;
+			this.bounds.w = a3 < b3 ? b3 : a3;
+		}
+		var f = this.bounds.x;
+		var f1 = this.bounds.y;
+		var width = (f < 0 ? -f : f) + (f1 < 0 ? -f1 : f1) | 0;
+		var f = this.bounds.z;
+		var f1 = this.bounds.w;
+		var height = (f < 0 ? -f : f) + (f1 < 0 ? -f1 : f1) | 0;
+		this.colorMapWidth = width * this.tileSize.x * this.pixelPerUnit | 0;
+		this.colorMapHeight = height * this.tileSize.y * this.pixelPerUnit | 0;
+		this.heightMap = new h3d.mat.Texture(this.colorMapWidth,this.colorMapHeight,[h3d.mat.TextureFlags.Target]);
+	}
+	,updateBounds: function() {
+		var minX = 0.0;
+		var maxX = 0.0;
+		var minY = 0.0;
+		var maxY = 0.0;
+		var _g = 0;
+		var _g1 = this.tiles;
+		while(_g < _g1.length) {
+			var t = _g1[_g];
+			++_g;
+			var b = t.tileX;
+			if(minX > b) {
+				minX = b;
+			}
+			var b1 = t.tileX + 1;
+			if(maxX < b1) {
+				maxX = b1;
+			}
+			var b2 = t.tileY;
+			if(minY > b2) {
+				minY = b2;
+			}
+			var b3 = t.tileY + 1;
+			if(maxY < b3) {
+				maxY = b3;
+			}
+		}
+		minX *= this.tileSize.x;
+		maxX *= this.tileSize.y;
+		minY *= this.tileSize.x;
+		maxY *= this.tileSize.y;
+		var _this = this.getAbsPos();
+		var v = null;
+		if(v == null) {
+			v = new h3d.Vector();
+		}
+		var x = _this._41;
+		var y = _this._42;
+		var z = _this._43;
+		var w = _this._44;
+		if(w == null) {
+			w = 1.;
+		}
+		if(z == null) {
+			z = 0.;
+		}
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		v.x = x;
+		v.y = y;
+		v.z = z;
+		v.w = w;
+		var pos = v;
+		var _this = this.fromTo;
+		var x = minX;
+		var y = minY;
+		var z = maxX;
+		var w = maxY;
+		if(w == null) {
+			w = 1.;
+		}
+		if(z == null) {
+			z = 0.;
+		}
+		if(y == null) {
+			y = 0.;
+		}
+		if(x == null) {
+			x = 0.;
+		}
+		_this.x = x;
+		_this.y = y;
+		_this.z = z;
+		_this.w = w;
+	}
+	,sync: function(ctx) {
+		hrt.prefab.terrain.TerrainMesh.prototype.sync.call(this,ctx);
+		var engine = h3d.Engine.CURRENT;
+		var output = [hxsl.Output.Value("heightMap")];
+		var ss = new h3d.pass.ScreenFx(this.waterBakeShader,output);
+		ss.setGlobals(ctx.scene.renderer.ctx);
+		var _this = ss.shader;
+		var hrtime = process.hrtime();
+		_this.time__ = hrtime[0] + hrtime[1] / 1e9;
+		engine.pushTargets([this.heightMap]);
+		var _g = 0;
+		var _g1 = this.tiles;
+		while(_g < _g1.length) {
+			var t = _g1[_g];
+			++_g;
+			var _this = ss.shader.from__;
+			var x = (t.tileX - this.bounds.x) * (this.tileSize.x * this.pixelPerUnit) / this.colorMapWidth;
+			var y = (t.tileY - this.bounds.z) * (this.tileSize.y * this.pixelPerUnit) / this.colorMapHeight;
+			if(y == null) {
+				y = 0.;
+			}
+			if(x == null) {
+				x = 0.;
+			}
+			_this.x = x;
+			_this.y = y;
+			_this.z = 0.;
+			_this.w = 1.;
+			var _this1 = ss.shader.to__;
+			var x1 = ss.shader.from__.x + this.tileSize.x * this.pixelPerUnit / this.colorMapWidth;
+			var y1 = ss.shader.from__.y + this.tileSize.y * this.pixelPerUnit / this.colorMapHeight;
+			if(y1 == null) {
+				y1 = 0.;
+			}
+			if(x1 == null) {
+				x1 = 0.;
+			}
+			_this1.x = x1;
+			_this1.y = y1;
+			_this1.z = 0.;
+			_this1.w = 1.;
+			ss.render();
+		}
+		engine.popTarget();
+		this.waterShader.heightMap__ = this.heightMap;
+	}
+	,__class__: prefab.WaterMesh
+});
 prefab.terrain.Terrain = $hxClasses["prefab.terrain.Terrain"] = function(parent) {
 	hrt.prefab.terrain.Terrain.call(this,parent);
 };
@@ -370,29 +1272,6 @@ prefab.terrain.TerrainBlend.prototype = $extend(hxsl.Shader.prototype,{
 	}
 	,__class__: prefab.terrain.TerrainBlend
 	,__properties__: {set_DEBUG:"set_DEBUG",get_DEBUG:"get_DEBUG",set_invScale:"set_invScale",get_invScale:"get_invScale",set_translate:"set_translate",get_translate:"get_translate",set_rotate:"set_rotate",get_rotate:"get_rotate",set_range:"set_range",get_range:"get_range",set_normalHeightTexture:"set_normalHeightTexture",get_normalHeightTexture:"get_normalHeightTexture",set_to:"set_to",get_to:"get_to",set_from:"set_from",get_from:"get_from"}
-});
-prefab.terrain.TerrainBlendShadowPass = $hxClasses["prefab.terrain.TerrainBlendShadowPass"] = function() {
-	hxsl.Shader.call(this);
-};
-prefab.terrain.TerrainBlendShadowPass.__name__ = "prefab.terrain.TerrainBlendShadowPass";
-prefab.terrain.TerrainBlendShadowPass._SHADER = null;
-prefab.terrain.TerrainBlendShadowPass.__super__ = hxsl.Shader;
-prefab.terrain.TerrainBlendShadowPass.prototype = $extend(hxsl.Shader.prototype,{
-	updateConstants: function(globals) {
-		this.constBits = 0;
-		this.updateConstantsFinal(globals);
-	}
-	,getParamValue: function(index) {
-		return null;
-	}
-	,getParamFloatValue: function(index) {
-		return 0.;
-	}
-	,setParamIndexValue: function(index,val) {
-	}
-	,setParamIndexFloatValue: function(index,val) {
-	}
-	,__class__: prefab.terrain.TerrainBlendShadowPass
 });
 prefab.terrain.TerrainColorNormalShader = $hxClasses["prefab.terrain.TerrainColorNormalShader"] = function() {
 	this.invScale__ = new h3d.Vector();
@@ -1427,9 +2306,14 @@ prefab.terrain.TerrainMesh.prototype = $extend(hrt.prefab.terrain.TerrainMesh.pr
 });
 $hxClasses["Math"] = Math;
 if( String.fromCodePoint == null ) String.fromCodePoint = function(c) { return c < 0x10000 ? String.fromCharCode(c) : String.fromCharCode((c>>10)+0xD7C0)+String.fromCharCode((c&0x3FF)+0xDC00); }
+prefab.terrain.TerrainBlendShadowPass.SRC = "HXSLJXByZWZhYi50ZXJyYWluLlRlcnJhaW5CbGVuZFNoYWRvd1Bhc3MCAQpzaGFkb3dQYXNzAgQAAAIIZnJhZ21lbnQOBgAAAQECAAAFAQYEAgECAQEBAgIA";
+prefab.TerrainAlphaBlend.terrainBlendShadowPass = new prefab.terrain.TerrainBlendShadowPass();
+prefab.TerrainAlphaBlend._ = hrt.prefab.Library.register("terrainAlphaBlend",prefab.TerrainAlphaBlend);
+prefab.WaterShader.SRC = "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";
+prefab.Water._ = hrt.prefab.Library.register("water",prefab.Water);
+prefab.WaterBakeShader.SRC = "HXSLFnByZWZhYi5XYXRlckJha2VTaGFkZXITAQVpbnB1dA0BAgIIcG9zaXRpb24FCgEBAAMCdXYFCgEBAAEAAAQFZmxpcFkDAgAABQZvdXRwdXQNAgIGCHBvc2l0aW9uBQwEBQAHBWNvbG9yBQwEBQAEAAAICnBpeGVsQ29sb3IFDAQAAAkMY2FsY3VsYXRlZFVWBQoEAAAKCWhlaWdodE1hcAUMBAAACwR0aW1lAwIAAAwEZnJvbQUKAgAADQJ0bwUKAgAADgtXQVZFX05VTUJFUgECAAEAAAAAAA8PV0FWRV9OVU1CRVJfQklTAQIAAQAAAAAAEA93YXZlSW50ZW5zaXRpZXMPAw4CAAARD3dhdmVGcmVxdWVuY2llcw8DDgIAABILd2F2ZVZlY3RvcnMPAw8CAAATCndhdmVPZmZzZXQDBAAAFAhfX2luaXRfXw4GAAAVBHdhdmUOBgAAFgZ2ZXJ0ZXgOBgAAFwhmcmFnbWVudA4GAAAEAhQAAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAMVARgDcG9zBQoEAAADBQMGBAITAwEDAAAAAAAAAAADAxUGdW5yb2xsAA4ZAWkBBAAABhUBAgAAAAABAg4BDwEAAAUBBoACEwMGARECEA8DDgIZAQMJAwIOAQYACQMdDgICGAUKCQMoDgIRAhIPAw8GAQECAgAAAAECGQEBAxECEg8DDwYABgEBAgIAAAABAhkBAQECAQAAAAEBAwUKAwYBEQIRDwMOAhkBAwILAwMDAwMDAAAADQYBEQIQDwMOAQIAAAAAAQMCEwMDAAAAFgAABQIGBAIGBQwJAyoOAwkDOw4BCQMYDgMCDAUKAg0FCgkDOg4BAgIFCgUKBQoFCgEDAAAAAAAAAAADAQMAAAAAAADwPwMFDAUMBoEKAgYFDAQAAwIEAwMAARcAAAUHCBoGaGVpZ2h0AwQAAAkCFQ4BCgIGBQwRAAUKAwAIGwl0YW5nZW50VVYFCgQAAAYACgIGBQwRAAUKCQMoDgIBA5qZmZmZmbk/AwEDAAAAAAAAAAADBQoFCgAIHAd0YW5nZW50BQsEAAAJAx8OAQYDCQMpDgICGwUKCQIVDgECGwUKAwULCQMpDgIKAgYFDBEABQoCGgMFCwULBQsACB0LYml0YW5nZW50VVYFCgQAAAYACgIGBQwRAAUKCQMoDgIBAwAAAAAAAAAAAwEDmpmZmZmZuT8DBQoFCgAIHgliaXRhbmdlbnQFCwQAAAkDHw4BBgMJAykOAgIdBQoJAhUOAQIdBQoDBQsJAykOAgoCBgUMEQAFCgIaAwULBQsFCwAIHwZub3JtYWwFCwQAAAkDHw4BCQMeDgICHAULAh4FCwULBQsABgQCCgUMCQMqDgQJAwIOAQYBCgIGBQwAAAMCCwMDAwkDAg4BBgEKAgYFDAQAAwILAwMDAQMAAAAAAAAAAAMJAwIOAQYBCgIGBQwAAAMCCwMDAwUMBQwA";
 prefab.terrain.Terrain._ = hrt.prefab.Library.register("terrain",prefab.terrain.Terrain);
 prefab.terrain.TerrainBlend.SRC = "HXSLG3ByZWZhYi50ZXJyYWluLlRlcnJhaW5CbGVuZBEBBGZyb20FCgIAAAICdG8FCgIAAAMTbm9ybWFsSGVpZ2h0VGV4dHVyZQoCAAAEBXJhbmdlAwIAAAUGcm90YXRlBQoCAAAGCXRyYW5zbGF0ZQUKAgAABwhpbnZTY2FsZQUKAgAACAVERUJVRwICAAEAAAAAAAkKc2hhZG93UGFzcwIEAAAKE3RyYW5zZm9ybWVkUG9zaXRpb24FCwQAAAsRdHJhbnNmb3JtZWROb3JtYWwFCwQAAAwQcmVsYXRpdmVQb3NpdGlvbgULBAAADQpwaXhlbENvbG9yBQwEAAAODXRlcnJhaW5IZWlnaHQDBAAADw10ZXJyYWluTm9ybWFsBQsEAAAQEF9faW5pdF9fZnJhZ21lbnQOBgAAEQhmcmFnbWVudA4GAAACAhAAAAUBBQEGBAIJAgEBAAICAAABEQAABQoIEglyb3RhdGVQb3MFCgQAAAYACgIKBQsRAAUKAgYFCgUKAAYEAhIFCgkDKA4CBgMGAQoCEgUKAAADCgIFBQoAAAMDBgEKAhIFCgQAAwoCBQUKBAADAwMGAAYBCgISBQoAAAMKAgUFCgQAAwMGAQoCEgUKBAADCgIFBQoAAAMDAwUKBQoGgQISBQoCBwUKBQoIEwl0ZXJyYWluVVYFCgQAAAYCBAYDAhIFCgIBBQoFCgUKBAYACQMPDgECAgUKBQoJAw8OAQIBBQoFCgUKBQoFCgAIFBN0ZXJyYWluSGVpZ2h0Tm9ybWFsBQwEAAAKCQMhDgICAwoCEwUKBQyTAwUMAAYEAg4DCgIUBQwMAAMDBgQCDwULCgIUBQySAAULBQsIFQpibGVuZEFtb3V0AwQAAAYDAQMAAAAAAADwPwMJAwgOAgYDAQMAAAAAAADwPwMJAzUOAQYCBAYDCgIKBQsIAAMCDgMDAwIEAwMDAwEDAAAAAAAAAEADAwMACwIIAgYECgINBQySAAULCQMpDgECFQMFCwULBoEKAg0FDAwAAwIVAwMACwYOAgkCBgkKAg0FDAwAAwEDAAAAAAAA8D8DAgIMAAAAAA";
-prefab.terrain.TerrainBlendShadowPass.SRC = "HXSLJXByZWZhYi50ZXJyYWluLlRlcnJhaW5CbGVuZFNoYWRvd1Bhc3MCAQpzaGFkb3dQYXNzAgQAAAIIZnJhZ21lbnQOBgAAAQECAAAFAQYEAgECAQEBAgIA";
 prefab.terrain.TerrainColorNormalShader.SRC = "HXSLJ3ByZWZhYi50ZXJyYWluLlRlcnJhaW5Db2xvck5vcm1hbFNoYWRlchABBXJhbmdlAwIAAAIEZnJvbQUKAgAAAwJ0bwUKAgAABA1hbGJlZG9UZXh0dXJlCgIAAAUTbm9ybWFsSGVpZ2h0VGV4dHVyZQoCAAAGBnJvdGF0ZQUKAgAABwl0cmFuc2xhdGUFCgIAAAgIaW52U2NhbGUFCgIAAAkFREVCVUcCAgABAAAAAAAKE3RyYW5zZm9ybWVkUG9zaXRpb24FCwQAAAsRdHJhbnNmb3JtZWROb3JtYWwFCwQAAAwKcGl4ZWxDb2xvcgUMBAAADRByZWxhdGl2ZVBvc2l0aW9uBQsEAAAODXRlcnJhaW5Ob3JtYWwFCwQAAA8MdGVycmFpbkNvbG9yBQsEAAAQCGZyYWdtZW50DgYAAAEBEAAABQoIEQlyb3RhdGVQb3MFCgQAAAYACgIKBQsRAAUKAgcFCgUKAAYEAhEFCgkDKA4CBgMGAQoCEQUKAAADCgIGBQoAAAMDBgEKAhEFCgQAAwoCBgUKBAADAwMGAAYBCgIRBQoAAAMKAgYFCgQAAwMGAQoCEQUKBAADCgIGBQoAAAMDAwUKBQoGgQIRBQoCCAUKBQoIEgl0ZXJyYWluVVYFCgQAAAYCBAYDAhEFCgICBQoFCgUKBAYACQMPDgECAwUKBQoJAw8OAQICBQoFCgUKBQoFCgAIExN0ZXJyYWluSGVpZ2h0Tm9ybWFsBQwEAAAKCQMhDgICBQoCEgUKBQyTAwUMAAYEAg4FCwoJAzkOAQkDKg4CCgITBQySAAULAQMAAAAAAADwPwMFDAULkgAFCwULBgQCDwULCgkDIQ4CAgQKAhIFCgUMkgAFCwULCBQGYW1vdW50AwQAAAkDGg4DAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwkDNQ4BBgIKAg0FCwgAAwIBAwMDAwALAgkCBQIIFQpibGVuZEFtb3V0AwQAAAYDAQMAAAAAAADwPwMJAwgOAgYDAQMAAAAAAADwPwMJAzUOAQYCBAYDCgIKBQsIAAMKAhMFDAwAAwMDAgEDAwMDAQMAAAAAAAAAQAMDAwAGBAoCDAUMkgAFCwkDKQ4BAhUDBQsFCwAGBAoCDAUMkgAFCwkDGA4DAg8FCwoCDAUMkgAFCwIUAwULBQsABgQCCwULCQMYDgMCDgULAgsFCwIUAwULBQsA";
 prefab.terrain._TerrainMesh.TerrainBakeShader.SRC = "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";
 prefab.terrain._TerrainMesh.CopyHeightNormalShader.SRC = "HXSLMnByZWZhYi50ZXJyYWluLl9UZXJyYWluTWVzaC5Db3B5SGVpZ2h0Tm9ybWFsU2hhZGVyDQEFaW5wdXQNAQICCHBvc2l0aW9uBQoBAQADAnV2BQoBAQABAAAEBWZsaXBZAwIAAAUGb3V0cHV0DQICBghwb3NpdGlvbgUMBAUABwVjb2xvcgUMBAUABAAACApwaXhlbENvbG9yBQwEAAAJDGNhbGN1bGF0ZWRVVgUKBAAACgxzb3VyY2VIZWlnaHQKAgAACxBzb3VyY2VIZWlnaHRTaXplBQoCAAAMDHNvdXJjZU5vcm1hbAoCAAANBGZyb20FCgIAAA4CdG8FCgIAAA8IX19pbml0X18OBgAAEAZ2ZXJ0ZXgOBgAAEQhmcmFnbWVudA4GAAADAg8AAAUCBgQCBwUMAggFDAUMBgQCCQUKAgMFCgUKAAAQAAAFAgYEAgYFDAkDKg4DCQM7DgEJAxgOAwINBQoCDgUKCQM6DgECAgUKBQoFCgUKAQMAAAAAAAAAAAMBAwAAAAAAAPA/AwUMBQwGgQoCBgUMBAADAgQDAwABEQAABQEGBAIIBQwJAyoOAgoJAyEOAgIMCgIJBQoFDJIABQsKCQMhDgICCgoCCQUKBQwAAAMFDAUMAA";

@@ -1,16 +1,14 @@
 package prefab;
 
-// import hxsl.Output;
+import hxsl.Output;
 
-// class WaterBakeShader extends h3d.shader.ScreenShader {
+class WaterBakeShader extends h3d.shader.ScreenShader {
 
-// 	static var SRC = {
+	static var SRC = {
 
-		/*var heightMap : Vec4;
+		var heightMap : Vec4;
 
-		@global var global : {
-			var time : Float;
-		};
+		@param var time : Float;
 
 		@param var from : Vec2;
 		@param var to : Vec2;
@@ -26,7 +24,7 @@ package prefab;
 		function wave(pos : Vec2) : Float {
 			waveOffset = 0.0;
 			@unroll for (i in 0...WAVE_NUMBER) {
-				waveOffset += waveIntensities[i] * sin(dot(pos, vec2(waveVectors[2*i], waveVectors[2*i+1])) + waveFrequencies[i] * global.time);
+				waveOffset += waveIntensities[i] * sin(dot(pos, vec2(waveVectors[2*i], waveVectors[2*i+1])) + waveFrequencies[i] * time);
 			}
 			return waveIntensities[0] * waveOffset;
 		}
@@ -43,17 +41,20 @@ package prefab;
 			var bitangentUV = output.position.xy + vec2(0.0, 0.1);
 			var bitangent = normalize(vec3(bitangentUV, wave(bitangentUV)) - vec3(output.position.xy, height));
 			var normal = normalize(cross(tangent, bitangent));
-			heightMap = vec4(normal, height);
-		}*/
-// 	}
-// }
+			//heightMap = vec4(normal, height);
+			heightMap = vec4(sin(output.position.x * time), sin(output.position.y * time), 0.0, sin(output.position.x * time));
+		}
+ 	}
+}
 
-// class WaterMesh extends hrt.prefab.terrain.TerrainMesh {
+class WaterMesh extends hrt.prefab.terrain.TerrainMesh {
 
-	/*var pixelPerUnit = 4;
+	var pixelPerUnit = 4;
 	public var heightMap : h3d.mat.Texture;
 	public var fromTo = new h3d.Vector();
 	var bounds = new h3d.Vector();
+
+	var waterShader : prefab.Water.WaterShader = null;
 
 	var waterBakeShader = new WaterBakeShader();
 	var colorMapWidth = 128;
@@ -107,6 +108,11 @@ package prefab;
 		var output = [Value("heightMap")];
 		var ss = new h3d.pass.ScreenFx(waterBakeShader, output);
 		ss.setGlobals(@:privateAccess ctx.scene.renderer.ctx);
+		#if editor
+		ss.shader.time = haxe.Timer.stamp();
+		#else
+		ss.shader.time = Game.inst.time;
+		#end
 		engine.pushTargets([heightMap]);
 		for( t in tiles ) {
 			ss.shader.from.set(((t.tileX - bounds.x) * (tileSize.x * pixelPerUnit)) / colorMapWidth, ((t.tileY - bounds.z) * (tileSize.y * pixelPerUnit)) / colorMapHeight);
@@ -114,7 +120,8 @@ package prefab;
 			ss.render();
 		}
 		engine.popTarget();
-	}*/
-// }
+		waterShader.heightMap = heightMap;
+	}
+}
 
 

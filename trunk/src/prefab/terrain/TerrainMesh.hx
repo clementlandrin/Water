@@ -231,7 +231,7 @@ class TerrainMesh extends hrt.prefab.terrain.TerrainMesh {
 
 	public var terrainColorShaders : Array<TerrainColorNormalShader> = [];
 	public var terrainBlendShaders : Array<TerrainBlend> = [];
-	public var waterShaders : Array<prefab.Water.WaterShader> = [];
+	//public var waterShaders : Array<prefab.Water.WaterShader> = [];
 
 	public function new(?parent){
 		super(parent);
@@ -309,14 +309,14 @@ class TerrainMesh extends hrt.prefab.terrain.TerrainMesh {
 			s.invScale.set(1./scaleX, 1./scaleY);
 		}
 
-		for( s in waterShaders ) {
+		/*for( s in waterShaders ) {
 			s.terrainHeightTexture = getNormalHeightTexture();
 			s.from.set(fromTo.x, fromTo.y);
 			s.to.set(fromTo.z, fromTo.w);
 			s.rotate.set(cos, sin);
 			s.translate.set(-getAbsPos().getPosition().x, -getAbsPos().getPosition().y);
 			s.invScale.set(1./scaleX, 1./scaleY);
-		}
+		}*/
 	}
 
 	public function syncTerrainColorShader( s : TerrainColorNormalShader ) {
@@ -327,9 +327,9 @@ class TerrainMesh extends hrt.prefab.terrain.TerrainMesh {
 		terrainBlendShaders.push(s);
 	}
 
-	public function syncWaterShader( s : prefab.Water.WaterShader ) {
-		waterShaders.push(s);
-	}
+//	public function syncWaterShader( s : prefab.Water.WaterShader ) {
+//		waterShaders.push(s);
+//	}
 
 	function bake() {
 
